@@ -1,0 +1,20 @@
+{
+  "name": "pickup-line-bot",
+  "version": "1.0.0",
+  "description": "Generate pickup lines using OpenAI's GPT-4 API.",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "typescript": "^5.0.2"
+  },
+  "dependencies": {
+    "@types/node": "^18.15.3",
+    "discord.js": "^14.8.0",
+    "openai": "^3.2.1",
+    "ts-node": "^10.9.1"
+  }
+}
