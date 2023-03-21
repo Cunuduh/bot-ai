@@ -1,5 +1,6 @@
-import { REST, Routes } from 'discord.js';
+import { REST, RESTPostAPIApplicationCommandsJSONBody, Routes } from 'discord.js';
 import fs from 'node:fs';
+import { CommandModule } from './interfaces';
 
 const clientId = process.env.CLIENT_ID;
 const token = process.env.BOT_TOKEN;
@@ -7,13 +8,13 @@ if (!clientId || !token) {
     console.error('Missing CLIENT_ID or BOT_TOKEN environment variable.');
     process.exit(1);
 }
-const commands: any[] = [];
-const commandFiles = fs.readdirSync('src/commands').filter(file => file.endsWith('.ts'));
+const commands: RESTPostAPIApplicationCommandsJSONBody[] = [];
+const commandFiles: string[] = fs.readdirSync('src/commands').filter(file => file.endsWith('.ts'));
 
-for (const file of commandFiles) {
-	const command = require(`./commands/${file}`);
+commandFiles.forEach((file: string) => {
+	const command: CommandModule = require(`./commands/${file}`);
 	commands.push(command.data.toJSON());
-}
+});
 
 const rest = new REST({ version: '10' }).setToken(token);
 
