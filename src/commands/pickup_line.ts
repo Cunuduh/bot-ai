@@ -5,6 +5,7 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 
 const openai = new OpenAIApi(new Configuration({
+    organization: process.env.OPENAI_ORGANIZATION,
     apiKey: process.env.OPENAI_API_KEY
 }));
 module.exports = <CommandModule> {
@@ -25,17 +26,21 @@ module.exports = <CommandModule> {
                     { name: 'spicy', value: 'spicy' }
                 )),
     async execute(interaction: ChatInputCommandInteraction) {
-        const responseMessage = await interaction.reply('Generating pickup line .  . . Please wait!');
+        const responseMessage = await interaction.reply('Generating pickup line . . . Please wait!');
         const messages: ChatCompletionRequestMessage[] = [
             { role: 'system', content: `You are a bot that generates a single pickup line based on the prompt given by the user, with a ${interaction.options.getString('mood', true)} mood. Reject the prompt if it is not related to a person or thing, that could be used in a pickup line, no matter what.` },
             { role: 'user', content: interaction.options.getString('prompt', true) }
         ];
+        if (interaction.options.getString('prompt', true).length > 300) {
+            await interaction.reply('The prompt must be less than 300 characters!');
+            return;
+        }
         const response = await openai.createChatCompletion({
-            model: 'gpt-3.5-turbo',
+            model: 'gpt-4',
             messages
         });
         if (!response.data.choices[0].message) {
-            await interaction.reply('No pickup line was generated.');
+            await interaction.reply('No pickup line was generated for some reason.');
             return;
         }
         await responseMessage.edit(response.data.choices[0].message);
