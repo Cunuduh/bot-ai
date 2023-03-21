@@ -1,11 +1,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { Client, Collection, Events, Interaction } from 'discord.js';
-import { CommandModule } from './interfaces';
+import { CommandModule } from './types';
 
 const token = process.env.BOT_TOKEN;
 const client = new Client({ intents: [] });
-const commands: Collection<string, any> = new Collection();
+const commands: Collection<string, CommandModule> = new Collection();
 const commandFiles = fs.readdirSync('src/commands').filter((file: string) => file.endsWith('.ts'));
 
 commandFiles.forEach((file: string) => {
@@ -19,7 +19,7 @@ console.log(client);
 
 client.on(Events.InteractionCreate, async (interaction: Interaction) => {
     if (!interaction.isCommand()) return;
-    const command: CommandModule = commands.get(interaction.commandName);
+    const command: CommandModule | undefined = commands.get(interaction.commandName);
     if (!command) return;
     try {
         await command.execute(interaction);

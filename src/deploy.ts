@@ -1,6 +1,6 @@
 import { REST, RESTPostAPIApplicationCommandsJSONBody, Routes } from 'discord.js';
 import fs from 'node:fs';
-import { CommandModule } from './interfaces';
+import { CommandModule } from './types';
 
 const clientId = process.env.CLIENT_ID;
 const token = process.env.BOT_TOKEN;

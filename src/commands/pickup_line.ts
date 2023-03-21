@@ -1,6 +1,6 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 import { ChatCompletionRequestMessage, Configuration, OpenAIApi } from 'openai';
-import { CommandModule } from '../interfaces';
+import { CommandModule } from '../types';
 const openai = new OpenAIApi(new Configuration({
     apiKey: process.env.OPENAI_API_KEY
 }));
