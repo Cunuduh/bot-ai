@@ -1,6 +1,9 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 import { ChatCompletionRequestMessage, Configuration, OpenAIApi } from 'openai';
 import { CommandModule } from '../types';
+import * as dotenv from 'dotenv';
+dotenv.config();
+
 const openai = new OpenAIApi(new Configuration({
     apiKey: process.env.OPENAI_API_KEY
 }));
@@ -28,7 +31,7 @@ module.exports = <CommandModule> {
             { role: 'user', content: interaction.options.getString('prompt', true) }
         ];
         const response = await openai.createChatCompletion({
-            model: 'gpt-4',
+            model: 'gpt-3.5-turbo',
             messages
         });
         if (!response.data.choices[0].message) {

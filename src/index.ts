@@ -1,7 +1,8 @@
 import fs from 'node:fs';
-import path from 'node:path';
 import { Client, Collection, Events, Interaction } from 'discord.js';
 import { CommandModule } from './types';
+import * as dotenv from 'dotenv';
+dotenv.config();
 
 const token = process.env.BOT_TOKEN;
 const client = new Client({ intents: [] });
@@ -9,8 +10,7 @@ const commands: Collection<string, CommandModule> = new Collection();
 const commandFiles = fs.readdirSync('src/commands').filter((file: string) => file.endsWith('.ts'));
 
 commandFiles.forEach((file: string) => {
-	const filePath = path.join('src/commands', file);
-	const command: CommandModule = require(filePath);
+	const command: CommandModule = require(`./commands/${file}`);
     commands.set(command.data.name, command);
 });
 
