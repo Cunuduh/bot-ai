@@ -39,7 +39,7 @@ module.exports = <CommandModule> {
         const response = await openai.config.createChatCompletion({
             model: 'gpt-4',
             messages,
-            max_tokens: 128
+            max_tokens: 256
         }).catch(async (error) => {
             console.error(error);
             responseEmbed = new EmbedBuilder()
