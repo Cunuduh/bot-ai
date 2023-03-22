@@ -25,10 +25,11 @@ client.on(Events.InteractionCreate, async (interaction: Interaction) => {
         await command.execute(interaction);
     } catch (error) {
         console.error(error);
-        if (interaction.replied) {
-            await interaction.followUp({ content: 'There was an error while executing this command!', ephemeral: true });
-        } else {
-            await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true, fetchReply: true });
+        if (!interaction.deferred) {
+            await interaction.deferReply({ ephemeral: true });
+            await interaction.editReply({ content: 'There was an error while executing this command!' });
+        } else if (!interaction.replied) {
+            await interaction.editReply({ content: 'There was an error while executing this command!' });
         }
     }
 });
