@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
+import { ChatInputCommandInteraction, EmbedBuilder, ErrorEvent, SlashCommandBuilder } from 'discord.js';
 import { ChatCompletionRequestMessage } from 'openai';
 import { CommandModule, OpenAISingleton } from '../types';
 
@@ -39,7 +39,7 @@ module.exports = <CommandModule> {
         }).catch(async (error) => {
             console.error(error);
             responseEmbed = new EmbedBuilder()
-                .setTitle('An error occurred while generating the response!');
+                .setTitle('An error occurred while generating the response! Error code: ' + error.response.status);
             await interaction.editReply({ embeds: [responseEmbed] });
             return;
         });

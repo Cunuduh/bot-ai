@@ -43,7 +43,7 @@ module.exports = <CommandModule> {
         }).catch(async (error) => {
             console.error(error);
             responseEmbed = new EmbedBuilder()
-                .setTitle('An error occurred while generating the pickup line!');
+                .setTitle('An error occurred while generating the pickup line! Error code: ' + error.response.status);
             await interaction.editReply({ embeds: [responseEmbed] });
             return;
         });
