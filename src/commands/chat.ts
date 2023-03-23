@@ -23,8 +23,9 @@ module.exports = <CommandModule> {
         const messages: ChatCompletionRequestMessage[] = [
             { role: 'user', content: interaction.options.getString('prompt', true) }
         ];
-        if (interaction.options.getString('system', true)) {
-            messages.unshift({ role: 'system', content: interaction.options.getString('system', true) });
+        const system = interaction.options.getString('system');
+        if (system) {
+            messages.unshift({ role: 'system', content: system });
         }
         if (interaction.options.getString('prompt', true).length > 256) {
             responseEmbed = new EmbedBuilder()
