@@ -27,9 +27,9 @@ module.exports = <CommandModule> {
         if (system) {
             messages.unshift({ role: 'system', content: system });
         }
-        if (interaction.options.getString('prompt', true).length > 256) {
+        if (interaction.options.getString('prompt', true).length > 256 || (system && system.length > 512)) {
             responseEmbed = new EmbedBuilder()
-                .setTitle('The prompt must be less than 256 characters!');
+                .setTitle('The prompt must be less than 256 characters and the system message must be less than 512 characters!');
             await interaction.editReply({ embeds: [responseEmbed] });
             return;
         }
