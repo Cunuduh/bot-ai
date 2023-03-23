@@ -4,7 +4,9 @@
   "description": "Generate pickup lines using OpenAI's GPT-4 API.",
   "main": "src/index.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "bot": "ts-node ./src/index.ts",
+    "deploy": "ts-node ./src/deploy-commands.ts"
   },
   "author": "",
   "license": "ISC",
