@@ -17,8 +17,7 @@ module.exports = <CommandModule> {
                 .setDescription("The system message to alter the behaviour of GPT-4.")
                 .setRequired(false)),
     async execute(interaction: ChatInputCommandInteraction) {
-        let responseEmbed = new EmbedBuilder()
-            .setTitle('Generating response . . . Please wait!');
+        let responseEmbed: EmbedBuilder;
         await interaction.deferReply({ fetchReply: true });
         const messages: ChatCompletionRequestMessage[] = [
             { role: 'user', content: interaction.options.getString('prompt', true) }
@@ -40,14 +39,14 @@ module.exports = <CommandModule> {
         }).catch(async (error) => {
             console.error(error);
             responseEmbed = new EmbedBuilder()
-                .setTitle('An error occurred while generating the pickup line!');
+                .setTitle('An error occurred while generating the response!');
             await interaction.editReply({ embeds: [responseEmbed] });
             return;
         });
         if (!response) return;
         if (!response.data.choices[0].message) {
             responseEmbed = new EmbedBuilder()
-                .setTitle('An error occurred while generating the pickup line!');
+                .setTitle('An error occurred while generating the response!');
             await interaction.editReply({ embeds: [responseEmbed] });
             return;
         }
@@ -56,7 +55,7 @@ module.exports = <CommandModule> {
             .setDescription(response.data.choices[0].message.content)
             .setColor('Blurple')
             .setTimestamp()
-            .setFooter({ text: 'Powered by OpenAI GPT-4' });
+            .setFooter({ text: 'Powered by OpenAI GPT-4. Not officially affiliated with OpenAI.' });
         await interaction.editReply({ embeds: [responseEmbed] });
     }
 };

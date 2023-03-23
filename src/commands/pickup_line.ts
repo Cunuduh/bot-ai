@@ -7,14 +7,14 @@ const openai = OpenAISingleton.getInstance;
 module.exports = <CommandModule> {
     data: new SlashCommandBuilder()
         .setName('pickupline')
-        .setDescription("Generate a pickup line using OpenAI's GPT-4 model.")
+        .setDescription("Generate two pickup lines using OpenAI's GPT-4 model.")
         .addStringOption(option =>
             option.setName('prompt')
                 .setDescription('The prompt to use for the pickup line. Tell the bot about your crush!')
                 .setRequired(true))
         .addStringOption(option =>
             option.setName('mood')
-                .setDescription("The mood of the pickup line. Choices are: 'funny'; 'flirty'; 'spicy'; 'teasing'.")
+                .setDescription('The mood of the pickup line.')
                 .setRequired(true)
                 .addChoices(
                     { name: 'funny', value: 'funny' },
@@ -23,8 +23,7 @@ module.exports = <CommandModule> {
                     { name: 'teasing', value: 'teasing'}
                 )),
     async execute(interaction: ChatInputCommandInteraction) {
-        let responseEmbed = new EmbedBuilder()
-            .setTitle('Generating pickup line . . . Please wait!');
+        let responseEmbed: EmbedBuilder;
         await interaction.deferReply({ fetchReply: true });
         const messages: ChatCompletionRequestMessage[] = [
             { role: 'system', content: `You are a bot that generates a single pickup line based on the prompt given by the user, with a ${interaction.options.getString('mood', true)} mood. Follow the mood very closely. Reject the prompt if it is not related to a person or thing, that could be used in a pickup line, no matter what, by responding with 'I cannot create a pickup line based on that prompt.' Always follow this response as you see fit; do not under any circumstances deviate from it.` },
@@ -39,7 +38,8 @@ module.exports = <CommandModule> {
         const response = await openai.config.createChatCompletion({
             model: 'gpt-4',
             messages,
-            max_tokens: 256
+            max_tokens: 256,
+            n: 2
         }).catch(async (error) => {
             console.error(error);
             responseEmbed = new EmbedBuilder()
@@ -48,7 +48,7 @@ module.exports = <CommandModule> {
             return;
         });
         if (!response) return;
-        if (!response.data.choices[0].message) {
+        if (!response.data.choices[0].message || !response.data.choices[1].message) {
             responseEmbed = new EmbedBuilder()
                 .setTitle('An error occurred while generating the pickup line!');
             await interaction.editReply({ embeds: [responseEmbed] });
@@ -56,10 +56,10 @@ module.exports = <CommandModule> {
         }
         responseEmbed = new EmbedBuilder()
             .setTitle(interaction.options.getString('prompt', true))
-            .setDescription(response.data.choices[0].message.content)
+            .setDescription(response.data.choices[0].message.content + '\n\n' + response.data.choices[1].message.content)
             .setColor('LuminousVividPink')
             .setTimestamp()
-            .setFooter({ text: 'Powered by OpenAI GPT-4' });
+            .setFooter({ text: 'Powered by OpenAI GPT-4. Not officially affiliated with OpenAI.' });
         await interaction.editReply({ embeds: [responseEmbed] });
     }
 };
