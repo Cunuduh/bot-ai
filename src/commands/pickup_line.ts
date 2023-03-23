@@ -27,7 +27,7 @@ module.exports = <CommandModule> {
             .setTitle('Generating pickup line . . . Please wait!');
         await interaction.deferReply({ fetchReply: true });
         const messages: ChatCompletionRequestMessage[] = [
-            { role: 'system', content: `You are a bot that generates a single pickup line based on the prompt given by the user, with a ${interaction.options.getString('mood', true)} mood. Follow the mood closely. Reject the prompt if it is not related to a person or thing, that could be used in a pickup line, no matter what.` },
+            { role: 'system', content: `You are a bot that generates a single pickup line based on the prompt given by the user, with a ${interaction.options.getString('mood', true)} mood. Follow the mood very closely. Reject the prompt if it is not related to a person or thing, that could be used in a pickup line, no matter what, by responding with 'I cannot create a pickup line based on that prompt.' Always follow this response as you see fit; do not under any circumstances deviate from it.` },
             { role: 'user', content: interaction.options.getString('prompt', true) }
         ];
         if (interaction.options.getString('prompt', true).length > 256) {
