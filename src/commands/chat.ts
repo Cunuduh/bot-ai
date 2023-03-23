@@ -11,7 +11,11 @@ module.exports = <CommandModule> {
         .addStringOption(option =>
             option.setName('prompt')
                 .setDescription('The prompt to communicate with GPT-4.')
-                .setRequired(true)),
+                .setRequired(true))
+        .addStringOption(option =>
+            option.setName('system')
+                .setDescription("The system message to alter the behaviour of GPT-4.")
+                .setRequired(false)),
     async execute(interaction: ChatInputCommandInteraction) {
         let responseEmbed = new EmbedBuilder()
             .setTitle('Generating response . . . Please wait!');
@@ -19,6 +23,9 @@ module.exports = <CommandModule> {
         const messages: ChatCompletionRequestMessage[] = [
             { role: 'user', content: interaction.options.getString('prompt', true) }
         ];
+        if (interaction.options.getString('system', true)) {
+            messages.unshift({ role: 'system', content: interaction.options.getString('system', true) });
+        }
         if (interaction.options.getString('prompt', true).length > 256) {
             responseEmbed = new EmbedBuilder()
                 .setTitle('The prompt must be less than 256 characters!');
