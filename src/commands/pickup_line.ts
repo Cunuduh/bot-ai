@@ -59,7 +59,7 @@ module.exports = <CommandModule> {
             .setDescription(response.data.choices[0].message.content + '\n\n' + response.data.choices[1].message.content)
             .setColor('LuminousVividPink')
             .setTimestamp()
-            .setFooter({ text: 'Response powered by OpenAI GPT-4. Not officially affiliated with OpenAI.' });
+            .setFooter({ text: 'Response powered by GPT-4. Not officially affiliated with OpenAI.' });
         await interaction.editReply({ embeds: [responseEmbed] });
     }
 };

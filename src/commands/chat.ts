@@ -13,7 +13,7 @@ module.exports = <CommandModule> {
                 .setDescription('The model to use for the response.')
                 .setRequired(true)
                 .addChoices(
-                    { name: 'gpt-3.5', value: 'gpt-3.5-turbo' },
+                    { name: 'gpt-3.5-turbo', value: 'gpt-3.5-turbo' },
                     { name: 'gpt-4', value: 'gpt-4' },
                 ))
         .addStringOption(option =>
@@ -64,7 +64,7 @@ module.exports = <CommandModule> {
             .setDescription(response.data.choices[0].message.content)
             .setColor('Blurple')
             .setTimestamp()
-            .setFooter({ text: `Response powered by OpenAI ${interaction.options.getString('model', true).toUpperCase()}. Not officially affiliated with OpenAI.` });
+            .setFooter({ text: `Response powered by ${interaction.options.getString('model', true).toUpperCase()}. Not officially affiliated with OpenAI.` });
         await interaction.editReply({ embeds: [responseEmbed] });
     }
 };
