@@ -1,9 +1,10 @@
 import { ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { ChatCompletionRequestMessage } from 'openai';
-import { CommandModule, OpenAISingleton } from '../types';
+import { CommandModule, OpenAISingleton, UserTracker } from '../types';
 
+const tracker = UserTracker.getInstance;
 const openai = OpenAISingleton.getInstance;
-
+// TODO for me later: add a tiktok command to generate tiktok comments from a prompt
 module.exports = <CommandModule> {
     data: new SlashCommandBuilder()
         .setName('chat')
@@ -25,7 +26,9 @@ module.exports = <CommandModule> {
                 .setDescription("The system message to alter the behaviour of the AI.")
                 .setRequired(false)),
     async execute(interaction: ChatInputCommandInteraction) {
-        const charLimit = interaction.options.getString('model') === 'gpt-4' ? 256 : 512;
+        const now = Date.now();
+        const userCount = tracker.getUserCount(interaction.user.id) ?? 0;
+        const charLimit = interaction.options.getString('model') === 'gpt-4' ? 256 : 1024;
         let responseEmbed: EmbedBuilder;
         await interaction.deferReply({ fetchReply: true });
         const messages: ChatCompletionRequestMessage[] = [
@@ -34,6 +37,12 @@ module.exports = <CommandModule> {
         const system = interaction.options.getString('system');
         if (system) {
             messages.unshift({ role: 'system', content: system });
+        }
+        if (userCount === 20) {
+            responseEmbed = new EmbedBuilder()
+                .setTitle('You have reached the maximum number of requests (20) for this command! Please try again at: <t:' + (now / 1000 + 3600) + ':t>.');
+            await interaction.editReply({ embeds: [responseEmbed] });
+            return;
         }
         if (interaction.options.getString('prompt', true).length > charLimit || (system && system.length > charLimit)) {
             responseEmbed = new EmbedBuilder()
@@ -66,5 +75,14 @@ module.exports = <CommandModule> {
             .setTimestamp()
             .setFooter({ text: `Response powered by ${interaction.options.getString('model', true).toUpperCase()}. Not officially affiliated with OpenAI.` });
         await interaction.editReply({ embeds: [responseEmbed] });
+        tracker.incrementUser(interaction.user.id);
+        if (userCount === 20) {
+            responseEmbed = new EmbedBuilder()
+                .setTitle('You have reached the maximum number of requests (20) for this command! Please try again at: <t:' + (now / 1000 + 3600) + ':t>.');
+            await interaction.followUp({ embeds: [responseEmbed] });
+            setTimeout(() => {
+                tracker.resetUserCount(interaction.user.id);
+            }, 3600000);
+        }
     }
 };

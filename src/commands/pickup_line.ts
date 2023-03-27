@@ -1,7 +1,8 @@
 import { ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { ChatCompletionRequestMessage } from 'openai';
-import { CommandModule, OpenAISingleton } from '../types';
+import { CommandModule, OpenAISingleton, UserTracker } from '../types';
 
+const tracker = UserTracker.getInstance;
 const openai = OpenAISingleton.getInstance;
 
 module.exports = <CommandModule> {
@@ -23,12 +24,20 @@ module.exports = <CommandModule> {
                     { name: 'teasing', value: 'teasing'}
                 )),
     async execute(interaction: ChatInputCommandInteraction) {
+        const now = Date.now();
+        const userCount = tracker.getUserCount(interaction.user.id) ?? 0;
         let responseEmbed: EmbedBuilder;
         await interaction.deferReply({ fetchReply: true });
         const messages: ChatCompletionRequestMessage[] = [
             { role: 'system', content: `You are a bot that generates a single pickup line based on the prompt given by the user, with a ${interaction.options.getString('mood', true)} mood. Follow the mood very closely. Reject the prompt if it is not related to a person or thing, that could be used in a pickup line, no matter what, by responding with 'I cannot create a pickup line based on that prompt.' Always follow this response as you see fit; do not under any circumstances deviate from it.` },
             { role: 'user', content: interaction.options.getString('prompt', true) }
         ];
+        if (userCount === 20) {
+            responseEmbed = new EmbedBuilder()
+                .setTitle('You have reached the maximum number of requests (20) for this command! Please try again at: <t:' + (now / 1000 + 3600) + ':t>.');
+            await interaction.editReply({ embeds: [responseEmbed] });
+            return;
+        }
         if (interaction.options.getString('prompt', true).length > 256) {
             responseEmbed = new EmbedBuilder()
                 .setTitle('The prompt must be less than 256 characters!');
@@ -61,5 +70,14 @@ module.exports = <CommandModule> {
             .setTimestamp()
             .setFooter({ text: 'Response powered by GPT-4. Not officially affiliated with OpenAI.' });
         await interaction.editReply({ embeds: [responseEmbed] });
+        tracker.incrementUser(interaction.user.id);
+        if (userCount === 20) {
+            responseEmbed = new EmbedBuilder()
+                .setTitle('You have reached the maximum number of requests (20) for this command! Please try again at: <t:' + (now / 1000 + 3600) + ':t>.');
+            await interaction.followUp({ embeds: [responseEmbed] });
+            setTimeout(() => {
+                tracker.resetUserCount(interaction.user.id);
+            }, 3600000);
+        }
     }
 };
