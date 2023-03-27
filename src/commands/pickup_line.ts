@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { ChatCompletionRequestMessage } from 'openai';
 import { CommandModule, OpenAISingleton, UserTracker } from '../types';
 
@@ -26,6 +26,14 @@ module.exports = <CommandModule> {
     async execute(interaction: ChatInputCommandInteraction) {
         let now = tracker.getUserTime(interaction.user.id);
         const userCount = tracker.getUserCount(interaction.user.id);
+        const actionRow = new ActionRowBuilder<ButtonBuilder>()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId('requestsRemaining')
+                    .setLabel(`${30 - userCount}/30 requests remaining`)
+                    .setStyle(ButtonStyle.Secondary)
+                    .setDisabled(true)
+            );
         let responseEmbed: EmbedBuilder;
         await interaction.deferReply({ fetchReply: true });
         const messages: ChatCompletionRequestMessage[] = [
@@ -41,7 +49,7 @@ module.exports = <CommandModule> {
         if (interaction.options.getString('prompt', true).length > 256) {
             responseEmbed = new EmbedBuilder()
                 .setTitle('The prompt must be less than 256 characters!');
-            await interaction.editReply({ embeds: [responseEmbed] });
+            await interaction.editReply({ embeds: [responseEmbed], components: [actionRow] });
             return;
         }
         const response = await openai.config.createChatCompletion({
@@ -53,14 +61,14 @@ module.exports = <CommandModule> {
             console.error(error);
             responseEmbed = new EmbedBuilder()
                 .setTitle('An error occurred while generating the pickup line! Error code: ' + error.response.status);
-            await interaction.editReply({ embeds: [responseEmbed] });
+            await interaction.editReply({ embeds: [responseEmbed], components: [actionRow] });
             return;
         });
         if (!response) return;
         if (!response.data.choices[0].message || !response.data.choices[1].message) {
             responseEmbed = new EmbedBuilder()
                 .setTitle('An error occurred while generating the pickup line!');
-            await interaction.editReply({ embeds: [responseEmbed] });
+            await interaction.editReply({ embeds: [responseEmbed], components: [actionRow] });
             return;
         }
         responseEmbed = new EmbedBuilder()
@@ -69,7 +77,7 @@ module.exports = <CommandModule> {
             .setColor('LuminousVividPink')
             .setTimestamp()
             .setFooter({ text: 'Response powered by GPT-4. Not officially affiliated with OpenAI.' });
-        await interaction.editReply({ embeds: [responseEmbed] });
+        await interaction.editReply({ embeds: [responseEmbed], components: [actionRow] });
         tracker.incrementUser(interaction.user.id);
         console.log('User ' + interaction.user.id + ' has made ' + tracker.getUserCount(interaction.user.id) + ' requests.');
         if (tracker.getUserCount(interaction.user.id) === 30) {
