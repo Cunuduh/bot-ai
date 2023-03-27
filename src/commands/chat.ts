@@ -68,6 +68,7 @@ module.exports = <CommandModule> {
             await interaction.editReply({ embeds: [responseEmbed] });
             return;
         }
+        tracker.incrementUser(interaction.user.id);
         responseEmbed = new EmbedBuilder()
             .setTitle(interaction.options.getString('prompt', true))
             .setDescription(response.data.choices[0].message.content)
@@ -83,7 +84,6 @@ module.exports = <CommandModule> {
                     .setDisabled(true)
             );
         await interaction.editReply({ embeds: [responseEmbed], components: [actionRow] });
-        tracker.incrementUser(interaction.user.id);
         if (tracker.getUserCount(interaction.user.id) === 30) {
             tracker.setUserTime(interaction.user.id, Date.now());
             now = tracker.getUserTime(interaction.user.id);
