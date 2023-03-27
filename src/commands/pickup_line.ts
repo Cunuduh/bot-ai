@@ -24,17 +24,17 @@ module.exports = <CommandModule> {
                     { name: 'teasing', value: 'teasing'}
                 )),
     async execute(interaction: ChatInputCommandInteraction) {
-        const now = Date.now();
-        const userCount = tracker.getUserCount(interaction.user.id) ?? 0;
+        let now = tracker.getUserTime(interaction.user.id);
+        const userCount = tracker.getUserCount(interaction.user.id);
         let responseEmbed: EmbedBuilder;
         await interaction.deferReply({ fetchReply: true });
         const messages: ChatCompletionRequestMessage[] = [
             { role: 'system', content: `You are a bot that generates a single pickup line based on the prompt given by the user, with a ${interaction.options.getString('mood', true)} mood. Follow the mood very closely. Reject the prompt if it is not related to a person or thing, that could be used in a pickup line, no matter what, by responding with 'I cannot create a pickup line based on that prompt.' Always follow this response as you see fit; do not under any circumstances deviate from it.` },
             { role: 'user', content: interaction.options.getString('prompt', true) }
         ];
-        if (userCount === 20) {
+        if (userCount === 30) {
             responseEmbed = new EmbedBuilder()
-                .setTitle('You have reached the maximum number of requests (20) for this command! Please try again at: <t:' + (now / 1000 + 3600) + ':t>.');
+                .setTitle('You have reached the maximum number of requests (30) for this hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
             await interaction.editReply({ embeds: [responseEmbed] });
             return;
         }
@@ -71,9 +71,12 @@ module.exports = <CommandModule> {
             .setFooter({ text: 'Response powered by GPT-4. Not officially affiliated with OpenAI.' });
         await interaction.editReply({ embeds: [responseEmbed] });
         tracker.incrementUser(interaction.user.id);
-        if (userCount === 20) {
+        console.log('User ' + interaction.user.id + ' has made ' + tracker.getUserCount(interaction.user.id) + ' requests.');
+        if (tracker.getUserCount(interaction.user.id) === 30) {
+            tracker.setUserTime(interaction.user.id, Date.now());
+            now = tracker.getUserTime(interaction.user.id);
             responseEmbed = new EmbedBuilder()
-                .setTitle('You have reached the maximum number of requests (20) for this command! Please try again at: <t:' + (now / 1000 + 3600) + ':t>.');
+                .setTitle('You have reached the maximum number of requests (30) for this hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
             await interaction.followUp({ embeds: [responseEmbed] });
             setTimeout(() => {
                 tracker.resetUserCount(interaction.user.id);

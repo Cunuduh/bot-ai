@@ -24,8 +24,15 @@ export class OpenAISingleton {
 export class UserTracker {
     private static _instance: UserTracker;
     private _users: Map<string, number>;
+    private _userTimes: Map<string, number>;
     private constructor() {
         this._users = new Map();
+        this._userTimes = new Map();
+    }
+    public addUser(user: string) {
+        if (!this._users.has(user)) {
+            this._users.set(user, 0);
+        }
     }
     public static get getInstance() {
         return this._instance || (this._instance = new this());
@@ -41,14 +48,24 @@ export class UserTracker {
     }
     public getUserCount(user: string) {
         if (this._users.has(user)) {
-            return this._users.get(user);
+            return this._users.get(user) ?? 0;
         } else {
-            return this._users.set(user, 0);
+            return 0;
         }
     }
     public resetUserCount(user: string) {
         if (this._users.has(user)) {
             this._users.set(user, 0);
+        }
+    }
+    public setUserTime(user: string, time: number) {
+        this._userTimes.set(user, time);
+    }
+    public getUserTime(user: string) {
+        if (this._userTimes.has(user)) {
+            return this._userTimes.get(user) ?? 0;
+        } else {
+            return 0;
         }
     }
 }

@@ -26,8 +26,8 @@ module.exports = <CommandModule> {
                 .setDescription("The system message to alter the behaviour of the AI.")
                 .setRequired(false)),
     async execute(interaction: ChatInputCommandInteraction) {
-        const now = Date.now();
-        const userCount = tracker.getUserCount(interaction.user.id) ?? 0;
+        let now = tracker.getUserTime(interaction.user.id);
+        const userCount = tracker.getUserCount(interaction.user.id);
         const charLimit = interaction.options.getString('model') === 'gpt-4' ? 256 : 1024;
         let responseEmbed: EmbedBuilder;
         await interaction.deferReply({ fetchReply: true });
@@ -38,9 +38,9 @@ module.exports = <CommandModule> {
         if (system) {
             messages.unshift({ role: 'system', content: system });
         }
-        if (userCount === 20) {
+        if (userCount === 30) {
             responseEmbed = new EmbedBuilder()
-                .setTitle('You have reached the maximum number of requests (20) for this command! Please try again at: <t:' + (now / 1000 + 3600) + ':t>.');
+                .setTitle('You have reached the maximum number of requests (30) for this hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
             await interaction.editReply({ embeds: [responseEmbed] });
             return;
         }
@@ -76,9 +76,11 @@ module.exports = <CommandModule> {
             .setFooter({ text: `Response powered by ${interaction.options.getString('model', true).toUpperCase()}. Not officially affiliated with OpenAI.` });
         await interaction.editReply({ embeds: [responseEmbed] });
         tracker.incrementUser(interaction.user.id);
-        if (userCount === 20) {
+        if (tracker.getUserCount(interaction.user.id) === 30) {
+            tracker.setUserTime(interaction.user.id, Date.now());
+            now = tracker.getUserTime(interaction.user.id);
             responseEmbed = new EmbedBuilder()
-                .setTitle('You have reached the maximum number of requests (20) for this command! Please try again at: <t:' + (now / 1000 + 3600) + ':t>.');
+                .setTitle('You have reached the maximum number of requests (30) for this hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
             await interaction.followUp({ embeds: [responseEmbed] });
             setTimeout(() => {
                 tracker.resetUserCount(interaction.user.id);
