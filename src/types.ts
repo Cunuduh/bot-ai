@@ -20,7 +20,6 @@ export class OpenAISingleton {
         return this._instance || (this._instance = new this());
     }
 }
-// Track how many times a user has used a command
 export class UserTracker {
     private static _instance: UserTracker;
     private _users: Map<string, number>;
@@ -28,11 +27,6 @@ export class UserTracker {
     private constructor() {
         this._users = new Map();
         this._userTimes = new Map();
-    }
-    public addUser(user: string) {
-        if (!this._users.has(user)) {
-            this._users.set(user, 0);
-        }
     }
     public static get getInstance() {
         return this._instance || (this._instance = new this());
@@ -47,11 +41,7 @@ export class UserTracker {
         }
     }
     public getUserCount(user: string) {
-        if (this._users.has(user)) {
-            return this._users.get(user) ?? 0;
-        } else {
-            return 0;
-        }
+        return this._users.get(user) ?? 0;
     }
     public resetUserCount(user: string) {
         if (this._users.has(user)) {
@@ -62,10 +52,6 @@ export class UserTracker {
         this._userTimes.set(user, time);
     }
     public getUserTime(user: string) {
-        if (this._userTimes.has(user)) {
-            return this._userTimes.get(user) ?? 0;
-        } else {
-            return 0;
-        }
+        return this._userTimes.get(user) ?? 0;
     }
 }

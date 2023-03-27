@@ -27,16 +27,8 @@ module.exports = <CommandModule> {
                 .setRequired(false)),
     async execute(interaction: ChatInputCommandInteraction) {
         let now = tracker.getUserTime(interaction.user.id);
-        const userCount = tracker.getUserCount(interaction.user.id);
         const charLimit = interaction.options.getString('model') === 'gpt-4' ? 256 : 1024;
-        const actionRow = new ActionRowBuilder<ButtonBuilder>()
-            .addComponents(
-                new ButtonBuilder()
-                    .setCustomId('requestsRemaining')
-                    .setLabel(`${30 - userCount}/30 requests remaining`)
-                    .setStyle(ButtonStyle.Secondary)
-                    .setDisabled(true)
-            );
+        let actionRow: ActionRowBuilder<ButtonBuilder>;
         let responseEmbed: EmbedBuilder;
         await interaction.deferReply({ fetchReply: true });
         const messages: ChatCompletionRequestMessage[] = [
@@ -46,7 +38,7 @@ module.exports = <CommandModule> {
         if (system) {
             messages.unshift({ role: 'system', content: system });
         }
-        if (userCount === 30) {
+        if (tracker.getUserCount(interaction.user.id) === 30) {
             responseEmbed = new EmbedBuilder()
                 .setTitle('You have reached the maximum number of requests (30) for this hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
             await interaction.editReply({ embeds: [responseEmbed] });
@@ -55,7 +47,7 @@ module.exports = <CommandModule> {
         if (interaction.options.getString('prompt', true).length > charLimit || (system && system.length > charLimit)) {
             responseEmbed = new EmbedBuilder()
                 .setTitle(`The prompt and system message must be less than ${charLimit} characters!`);
-            await interaction.editReply({ embeds: [responseEmbed], components: [actionRow] });
+            await interaction.editReply({ embeds: [responseEmbed] });
             return;
         }
         const response = await openai.config.createChatCompletion({
@@ -66,14 +58,14 @@ module.exports = <CommandModule> {
             console.error(error);
             responseEmbed = new EmbedBuilder()
                 .setTitle('An error occurred while generating the response! Error code: ' + error.response.status);
-            await interaction.editReply({ embeds: [responseEmbed], components: [actionRow] });
+            await interaction.editReply({ embeds: [responseEmbed] });
             return;
         });
         if (!response) return;
         if (!response.data.choices[0].message) {
             responseEmbed = new EmbedBuilder()
                 .setTitle('An error occurred while generating the response!');
-            await interaction.editReply({ embeds: [responseEmbed], components: [actionRow] });
+            await interaction.editReply({ embeds: [responseEmbed] });
             return;
         }
         responseEmbed = new EmbedBuilder()
@@ -81,7 +73,15 @@ module.exports = <CommandModule> {
             .setDescription(response.data.choices[0].message.content)
             .setColor('Blurple')
             .setTimestamp()
-            .setFooter({ text: `Response powered by ${interaction.options.getString('model', true).toUpperCase()}. Not officially affiliated with OpenAI.` });
+            .setFooter({ text: `Reply powered by ${interaction.options.getString('model', true).toUpperCase()}. Not affiliated with OpenAI.` });
+        actionRow = new ActionRowBuilder<ButtonBuilder>()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId('requestsRemaining')
+                    .setLabel(`${30 - tracker.getUserCount(interaction.user.id)}/30 requests remaining`)
+                    .setStyle(ButtonStyle.Secondary)
+                    .setDisabled(true)
+            );
         await interaction.editReply({ embeds: [responseEmbed], components: [actionRow] });
         tracker.incrementUser(interaction.user.id);
         if (tracker.getUserCount(interaction.user.id) === 30) {
