@@ -34,7 +34,7 @@ export class UserTracker {
     public incrementUser(user: string) {
         if (this._users.has(user)) {
             const count = this._users.get(user);
-            if (!count) return;
+            if (count === undefined) return;
             this._users.set(user, count + 1);
         } else {
             this._users.set(user, 1);
