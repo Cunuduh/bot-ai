@@ -28,7 +28,7 @@ if (!clientId || !token) {
     process.exit(1);
 }
 const commands: RESTPostAPIApplicationCommandsJSONBody[] = [];
-const commandFiles: string[] = fs.readdirSync('src/commands').filter(file => file.endsWith('.ts'));
+const commandFiles: string[] = fs.readdirSync('src/commands').filter(file => file.endsWith('.ts') && file !== 'dan.ts');
 
 commandFiles.forEach((file: string) => {
 	const command: CommandModule = require(`./commands/${file}`);
