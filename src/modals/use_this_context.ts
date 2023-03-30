@@ -86,31 +86,6 @@ module.exports = <ModalModule> {
                         .setStyle(ButtonStyle.Secondary)
                         .setDisabled(true)
                 ) ] });
-            const flagged = await openai.config.createModeration({
-                model: 'text-moderation-latest',
-                input: interaction.fields.getTextInputValue('useThisContextUserInput')
-            }).catch(async (error) => {
-                console.error(error);
-                responseEmbed = new EmbedBuilder()
-                    .setTitle('An error occurred while generating the response! Error code: ' + error.response.status);
-                await interaction.editReply({ embeds: [responseEmbed] });
-                return;
-            }).then(async (response) => {
-                if (!response) return;
-                if (!response.data) {
-                    responseEmbed = new EmbedBuilder()
-                        .setTitle('An error occurred while generating the response!');
-                    await interaction.editReply({ embeds: [responseEmbed] });
-                    return;
-                }
-                return response.data.results[0].flagged;
-            });
-            if (flagged) {
-                responseEmbed = new EmbedBuilder()
-                    .setTitle('The prompt violates OpenAI usage policy!');
-                await interaction.editReply({ embeds: [responseEmbed] });
-                return;
-            }
             const response = await openai.config.createChatCompletion({
                 model: 'gpt-3.5-turbo',
                 messages,
@@ -130,6 +105,40 @@ module.exports = <ModalModule> {
                 return;
             }
             tracker.incrementUser(interaction.user.id);
+            const flagged = await openai.config.createModeration({
+                model: 'text-moderation-latest',
+                input: 'Prompt: ' + interaction.fields.getTextInputValue('useThisContextUserInput') + '\nResponse: ' + response.data.choices[0].message
+            }).catch(async (error) => {
+                console.error(error);
+                responseEmbed = new EmbedBuilder()
+                    .setTitle('An error occurred while generating the response! Error code: ' + error.response.status);
+                await interaction.editReply({ embeds: [responseEmbed] });
+                return;
+            }).then(async (response) => {
+                if (!response) return;
+                if (!response.data) {
+                    responseEmbed = new EmbedBuilder()
+                        .setTitle('An error occurred while generating the response!');
+                    await interaction.editReply({ embeds: [responseEmbed] });
+                    return;
+                }
+                return response.data.results[0].flagged;
+            });
+            if (flagged) {
+                responseEmbed = new EmbedBuilder()
+                    .setTitle('This violates OpenAI usage policy!');
+                await interaction.editReply({ embeds: [responseEmbed], components: [
+                    new ActionRowBuilder<ButtonBuilder>()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId('requestsRemaining')
+                                .setLabel(`${20 - tracker.getUserCount(interaction.user.id)}/20 requests remaining`)
+                                .setStyle(ButtonStyle.Secondary)
+                                .setDisabled(true)
+                        )
+                ] });
+                return;
+            }
             responseEmbed = new EmbedBuilder()
                 .setTitle(interaction.fields.getTextInputValue('useThisContextUserInput'))
                 .setDescription(response.data.choices[0].message.content)

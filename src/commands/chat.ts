@@ -68,31 +68,6 @@ module.exports = <CommandModule> {
             await interaction.editReply({ embeds: [responseEmbed] });
             return;
         }
-        const flagged = await openai.config.createModeration({
-            model: 'text-moderation-latest',
-            input: interaction.options.getString('prompt', true)
-        }).catch(async (error) => {
-            console.error(error);
-            responseEmbed = new EmbedBuilder()
-                .setTitle('An error occurred while generating the response! Error code: ' + error.response.status);
-            await interaction.editReply({ embeds: [responseEmbed] });
-            return;
-        }).then(async (response) => {
-            if (!response) return;
-            if (!response.data) {
-                responseEmbed = new EmbedBuilder()
-                    .setTitle('An error occurred while generating the response!');
-                await interaction.editReply({ embeds: [responseEmbed] });
-                return;
-            }
-            return response.data.results[0].flagged;
-        });
-        if (flagged) {
-            responseEmbed = new EmbedBuilder()
-                .setTitle('The prompt violates OpenAI usage policy!');
-            await interaction.editReply({ embeds: [responseEmbed] });
-            return;
-        }
         const response = await openai.config.createChatCompletion({
             model: interaction.options.getString('model', true),
             messages,
@@ -112,6 +87,40 @@ module.exports = <CommandModule> {
             return;
         }
         tracker.incrementUser(interaction.user.id);
+        const flagged = await openai.config.createModeration({
+            model: 'text-moderation-latest',
+            input: 'Prompt: ' + interaction.options.getString('prompt', true) + '\nResponse: ' + response.data.choices[0].message
+        }).catch(async (error) => {
+            console.error(error);
+            responseEmbed = new EmbedBuilder()
+                .setTitle('An error occurred while generating the response! Error code: ' + error.response.status);
+            await interaction.editReply({ embeds: [responseEmbed] });
+            return;
+        }).then(async (response) => {
+            if (!response) return;
+            if (!response.data) {
+                responseEmbed = new EmbedBuilder()
+                    .setTitle('An error occurred while generating the response!');
+                await interaction.editReply({ embeds: [responseEmbed] });
+                return;
+            }
+            return response.data.results[0].flagged;
+        });
+        if (flagged) {
+            responseEmbed = new EmbedBuilder()
+                .setTitle('This violates OpenAI usage policy!');
+            await interaction.editReply({ embeds: [responseEmbed], components: [
+                new ActionRowBuilder<ButtonBuilder>()
+                    .addComponents(
+                        new ButtonBuilder()
+                            .setCustomId('requestsRemaining')
+                            .setLabel(`${20 - tracker.getUserCount(interaction.user.id)}/20 requests remaining`)
+                            .setStyle(ButtonStyle.Secondary)
+                            .setDisabled(true)
+                    )
+            ] });
+            return;
+        }
         responseEmbed = new EmbedBuilder()
             .setTitle(interaction.options.getString('prompt', true))
             .setDescription(response.data.choices[0].message.content)
