@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, ModalActionRowComponentBuilder, ModalBuilder, ModalSubmitInteraction, TextInputBuilder, TextInputStyle } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, MessageActionRowComponentBuilder, ModalActionRowComponentBuilder, ModalBuilder, ModalSubmitInteraction, TextInputBuilder, TextInputStyle } from "discord.js";
 import { ChatCompletionRequestMessage } from 'openai';
 import { Conversation, ModalModule, OpenAISingleton, UserTracker } from '../types';
 
@@ -44,13 +44,9 @@ module.exports = <ModalModule> {
             const previous = interaction.message.id;
             const root = tracker.findRoot(previous);
             if (!root) {
-                interaction.message.edit({ embeds: [interaction.message.embeds[0]], components: [new ActionRowBuilder<ButtonBuilder>()
+                interaction.message.edit({ embeds: [interaction.message.embeds[0]], components: [new ActionRowBuilder<MessageActionRowComponentBuilder>()
                     .addComponents(
-                        new ButtonBuilder()
-                            .setCustomId('requestsRemaining')
-                            .setLabel(`${20 - tracker.getUserCount(interaction.user.id)}/20 requests remaining`)
-                            .setStyle(ButtonStyle.Secondary)
-                            .setDisabled(true),
+                        interaction.message.components[0].components[0] as unknown as ButtonBuilder,
                         new ButtonBuilder()
                             .setCustomId('useThisContext')
                             .setLabel('Started a new conversation, cannot reply')
