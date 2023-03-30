@@ -15,13 +15,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-import { Interaction, SlashCommandBuilder } from "discord.js";
-import { Configuration, OpenAIApi } from "openai";
+import { Interaction, ModalBuilder, SlashCommandBuilder } from "discord.js";
+import { ChatCompletionRequestMessage, Configuration, OpenAIApi } from "openai";
 import * as dotenv from 'dotenv';
 dotenv.config();
 
 export interface CommandModule {
     data: SlashCommandBuilder;
+    execute: (interaction: Interaction) => Promise<void>;
+}
+export interface ModalModule {
+    modal: ModalBuilder;
     execute: (interaction: Interaction) => Promise<void>;
 }
 export class OpenAISingleton {
@@ -37,13 +41,21 @@ export class OpenAISingleton {
         return this._instance || (this._instance = new this());
     }
 }
+export interface Conversation {
+    conversation: ChatCompletionRequestMessage[];
+    root: string;
+    messageId: string;
+    userId: string;
+}
 export class UserTracker {
     private static _instance: UserTracker;
     private _users: Map<string, number>;
     private _userTimes: Map<string, number>;
+    private _commandConversation: Map<string, Conversation>;
     private constructor() {
         this._users = new Map();
         this._userTimes = new Map();
+        this._commandConversation = new Map();
     }
     public static get getInstance() {
         return this._instance || (this._instance = new this());
@@ -70,5 +82,33 @@ export class UserTracker {
     }
     public getUserTime(user: string) {
         return this._userTimes.get(user) ?? 0;
+    }
+    public updateCommandConversation(root: string, conv: Conversation) {
+        if (this._commandConversation.has(root)) {
+            const conversation = this._commandConversation.get(root)?.conversation;
+            if (conversation === undefined) return;
+            conversation.push(...conv.conversation);
+            this._commandConversation.set(root, conv);
+        } else {
+            this._commandConversation.set(root, conv);
+        }
+    }
+    public getCommandConversation(messageId: string) {
+        return this._commandConversation.get(messageId) ?? undefined;
+    }
+    public removeCommandConversation(userId: string) {
+        this._commandConversation.forEach((value, key) => {
+            if (value.userId === userId) {
+                this._commandConversation.delete(key);
+            }
+        });
+    }
+    public findRoot(messageId: string) {
+        for (const [key, value] of this._commandConversation) {
+            if (value.messageId === messageId) {
+                return key;
+            }
+        }
+        return undefined;
     }
 }

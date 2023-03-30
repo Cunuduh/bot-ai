@@ -17,7 +17,7 @@
 */
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { ChatCompletionRequestMessage } from 'openai';
-import { CommandModule, OpenAISingleton, UserTracker } from '../types';
+import { CommandModule, Conversation, OpenAISingleton, UserTracker } from '../types';
 
 const tracker = UserTracker.getInstance;
 const openai = OpenAISingleton.getInstance;
@@ -43,6 +43,7 @@ module.exports = <CommandModule> {
                 .setDescription("The system message to alter the behaviour of the AI.")
                 .setRequired(false)),
     async execute(interaction: ChatInputCommandInteraction) {
+        tracker.removeCommandConversation(interaction.user.id);
         let now = tracker.getUserTime(interaction.user.id);
         const charLimit = interaction.options.getString('model') === 'gpt-4' ? 256 : 1024;
         let actionRow: ActionRowBuilder<ButtonBuilder>;
@@ -55,9 +56,9 @@ module.exports = <CommandModule> {
         if (system) {
             messages.unshift({ role: 'system', content: system });
         }
-        if (tracker.getUserCount(interaction.user.id) === 30) {
+        if (tracker.getUserCount(interaction.user.id) === 20) {
             responseEmbed = new EmbedBuilder()
-                .setTitle('You have reached the maximum number of requests (30) for this hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
+                .setTitle('You have reached the maximum number of requests (20) for this hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
             await interaction.editReply({ embeds: [responseEmbed] });
             return;
         }
@@ -96,16 +97,37 @@ module.exports = <CommandModule> {
             .addComponents(
                 new ButtonBuilder()
                     .setCustomId('requestsRemaining')
-                    .setLabel(`${30 - tracker.getUserCount(interaction.user.id)}/30 requests remaining`)
+                    .setLabel(`${20 - tracker.getUserCount(interaction.user.id)}/20 requests remaining`)
+                    .setStyle(ButtonStyle.Secondary)
+                    .setDisabled(true),
+                interaction.options.getString('model', true) === 'gpt-3.5-turbo' ?
+                new ButtonBuilder()
+                    .setCustomId('useThisContext')
+                    .setLabel('Reply')
+                    .setStyle(ButtonStyle.Primary)
+                : new ButtonBuilder()
+                    .setCustomId('useThisContext')
+                    .setLabel('Reply only available for GPT-3.5')
                     .setStyle(ButtonStyle.Secondary)
                     .setDisabled(true)
             );
-        await interaction.editReply({ embeds: [responseEmbed], components: [actionRow] });
-        if (tracker.getUserCount(interaction.user.id) === 30) {
+        const res = await interaction.editReply({ embeds: [responseEmbed], components: [actionRow] });
+        const messagesToSend: ChatCompletionRequestMessage[] = [
+            ...messages,
+            { role: 'assistant', content: response.data.choices[0].message.content }
+        ];
+        const conversation: Conversation = {
+            conversation: messagesToSend,
+            root: res.id,
+            messageId: res.id,
+            userId: interaction.user.id
+        };
+        tracker.updateCommandConversation(res.id, conversation);
+        if (tracker.getUserCount(interaction.user.id) === 20) {
             tracker.setUserTime(interaction.user.id, Date.now());
             now = tracker.getUserTime(interaction.user.id);
             responseEmbed = new EmbedBuilder()
-                .setTitle('You have reached the maximum number of requests (30) for this hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
+                .setTitle('You have reached the maximum number of requests (20) for this hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
             await interaction.followUp({ embeds: [responseEmbed] });
             setTimeout(() => {
                 tracker.resetUserCount(interaction.user.id);

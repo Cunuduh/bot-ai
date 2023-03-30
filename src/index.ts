@@ -16,21 +16,32 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 import fs from 'node:fs';
-import { Client, Collection, Events, Interaction } from 'discord.js';
-import { CommandModule } from './types';
+import { Client, Collection, Events, GatewayIntentBits, Interaction, Message, Partials } from 'discord.js';
+import { CommandModule, ModalModule } from './types';
 import * as dotenv from 'dotenv';
 dotenv.config();
 
 const token = process.env.BOT_TOKEN;
-const client = new Client({ intents: [] });
+const client = new Client({ intents: [GatewayIntentBits.Guilds], partials: [Partials.Channel] });
 const commands: Collection<string, CommandModule> = new Collection();
 const commandFiles = fs.readdirSync('src/commands').filter((file: string) => file.endsWith('.ts'));
-
 commandFiles.forEach((file: string) => {
 	const command: CommandModule = require(`./commands/${file}`);
     commands.set(command.data.name, command);
 });
-
+const modals: Collection<string, ModalModule> = new Collection();
+const modalFiles = fs.readdirSync('src/modals').filter((file: string) => file.endsWith('.ts'));
+modalFiles.forEach((file: string) => {
+    const modal: ModalModule = require(`./modals/${file}`);
+    modals.set('m_' + toCamelCase(file.slice(0, -3)), modal);
+});
+function toCamelCase(str: string) {
+    return str.replace(/([-_][a-z])/gi, ($1) => {
+        return $1.toUpperCase()
+            .replace('-', '')
+            .replace('_', '');
+    });
+}
 client.login(token);
 console.log(client);
 
@@ -40,6 +51,46 @@ client.on(Events.InteractionCreate, async (interaction: Interaction) => {
     if (!command) return;
     try {
         await command.execute(interaction);
+    } catch (error) {
+        console.error(error);
+        if (!interaction.deferred) {
+            await interaction.deferReply({ ephemeral: true });
+            await interaction.editReply({ content: 'There was an error while executing this command!' });
+        } else if (!interaction.replied) {
+            await interaction.editReply({ content: 'There was an error while executing this command!' });
+        }
+    }
+});
+client.on(Events.InteractionCreate, async (interaction: Interaction) => {
+    if (!interaction.isButton()) return;
+    if (interaction.customId === 'useThisContext') {
+        if (!interaction.message.interaction) {
+            let msg: Message = interaction.message;
+            while (msg.reference) {
+                msg = await msg.fetchReference();
+            }
+            if (!msg.interaction) return;
+            const userWhoSentTheMessage = msg.interaction.user.id;
+            if (interaction.user.id !== userWhoSentTheMessage) {
+                await interaction.reply({ content: 'You can\'t use this context!', ephemeral: true });
+                return;
+            }
+        } else if (interaction.user.id !== interaction.message.interaction.user.id) {
+            await interaction.reply({ content: 'You can\'t use this context!', ephemeral: true });
+            return;
+        }
+        const modal: ModalModule | undefined = modals.get('m_useThisContext');
+        if (!modal) return;
+        await interaction.showModal(modal.modal);
+    }
+});
+
+client.on(Events.InteractionCreate, async (interaction: Interaction) => {
+    if (!interaction.isModalSubmit()) return;
+    const modal: ModalModule | undefined = modals.get(interaction.customId);
+    if (!modal) return;
+    try {
+        await modal.execute(interaction);
     } catch (error) {
         console.error(error);
         if (!interaction.deferred) {

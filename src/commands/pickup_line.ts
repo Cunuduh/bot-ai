@@ -49,9 +49,9 @@ module.exports = <CommandModule> {
             { role: 'system', content: `You are a bot that generates a single pickup line based on the prompt given by the user, with a ${interaction.options.getString('mood', true)} mood. Follow the mood very closely. Reject the prompt if it is not related to a person or thing, that could be used in a pickup line, no matter what, by responding with 'I cannot create a pickup line based on that prompt.' Always follow this response as you see fit; do not under any circumstances deviate from it.` },
             { role: 'user', content: interaction.options.getString('prompt', true) }
         ];
-        if (tracker.getUserCount(interaction.user.id) === 30) {
+        if (tracker.getUserCount(interaction.user.id) === 20) {
             responseEmbed = new EmbedBuilder()
-                .setTitle('You have reached the maximum number of requests (30) for this hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
+                .setTitle('You have reached the maximum number of requests (20) for this hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
             await interaction.editReply({ embeds: [responseEmbed] });
             return;
         }
@@ -91,16 +91,16 @@ module.exports = <CommandModule> {
             .addComponents(
                 new ButtonBuilder()
                     .setCustomId('requestsRemaining')
-                    .setLabel(`${30 - tracker.getUserCount(interaction.user.id)}/30 requests remaining`)
+                    .setLabel(`${20 - tracker.getUserCount(interaction.user.id)}/20 requests remaining`)
                     .setStyle(ButtonStyle.Secondary)
                     .setDisabled(true)
             );
         await interaction.editReply({ embeds: [responseEmbed], components: [actionRow] });
-        if (tracker.getUserCount(interaction.user.id) === 30) {
+        if (tracker.getUserCount(interaction.user.id) === 20) {
             tracker.setUserTime(interaction.user.id, Date.now());
             now = tracker.getUserTime(interaction.user.id);
             responseEmbed = new EmbedBuilder()
-                .setTitle('You have reached the maximum number of requests (30) for this hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
+                .setTitle('You have reached the maximum number of requests (20) for this hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
             await interaction.followUp({ embeds: [responseEmbed] });
             setTimeout(() => {
                 tracker.resetUserCount(interaction.user.id);
