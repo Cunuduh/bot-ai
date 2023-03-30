@@ -86,24 +86,6 @@ module.exports = <ModalModule> {
                         .setStyle(ButtonStyle.Secondary)
                         .setDisabled(true)
                 ) ] });
-            await openai.config.createModeration({
-                model: 'text-moderation-latest',
-                input: interaction.fields.getTextInputValue('useThisContextUserInput')
-            }).catch(async (error) => {
-                console.error(error);
-                responseEmbed = new EmbedBuilder()
-                    .setTitle('An error occurred while generating the response! Error code: ' + error.response.status);
-                await interaction.editReply({ embeds: [responseEmbed] });
-                return;
-            }).then(async (response) => {
-                if (!response) return;
-                if (response.data.results[0].flagged) {
-                    responseEmbed = new EmbedBuilder()
-                        .setTitle('This violates OpenAI usage policy!');
-                    await interaction.editReply({ embeds: [responseEmbed] });
-                    return;
-                }
-            });
             const response = await openai.config.createChatCompletion({
                 model: 'gpt-3.5-turbo',
                 messages,

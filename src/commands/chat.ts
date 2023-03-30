@@ -68,24 +68,6 @@ module.exports = <CommandModule> {
             await interaction.editReply({ embeds: [responseEmbed] });
             return;
         }
-        await openai.config.createModeration({
-            model: 'text-moderation-latest',
-            input: interaction.options.getString('prompt', true)
-        }).catch(async (error) => {
-            console.error(error);
-            responseEmbed = new EmbedBuilder()
-                .setTitle('An error occurred while generating the response! Error code: ' + error.response.status);
-            await interaction.editReply({ embeds: [responseEmbed] });
-            return;
-        }).then(async (response) => {
-            if (!response) return;
-            if (response.data.results[0].flagged) {
-                responseEmbed = new EmbedBuilder()
-                    .setTitle('This violates OpenAI usage policy!');
-                await interaction.editReply({ embeds: [responseEmbed] });
-                return;
-            }
-        });
         const response = await openai.config.createChatCompletion({
             model: interaction.options.getString('model', true),
             messages,
