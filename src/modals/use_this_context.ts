@@ -53,6 +53,8 @@ module.exports = <ModalModule> {
                             .setStyle(ButtonStyle.Secondary)
                             .setDisabled(true)
                     ) ] });
+                await interaction.deferReply({ ephemeral: true });
+                await interaction.editReply({ content: 'You started a new conversation and can no longer reply to this one.' });
                 return;
             }
             const previousMessages = tracker.getCommandConversation(root);
