@@ -20,7 +20,7 @@ import { Collection, Interaction, ModalBuilder, SlashCommandBuilder } from "disc
 import { ChatCompletionRequestMessage, Configuration, OpenAIApi } from "openai";
 import * as dotenv from 'dotenv';
 dotenv.config();
-export const Filter = new BadWordsFilter();
+export const Filter = new BadWordsFilter({ placeHolder: String.raw`\*` });
 export interface CommandModule {
     data: SlashCommandBuilder;
     execute: (interaction: Interaction) => Promise<void>;
