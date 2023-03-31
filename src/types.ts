@@ -25,7 +25,7 @@ Censor.disableTier(CensorTier.UserAdded);
 Censor.disableTier(CensorTier.CommonProfanity);
 Censor.disableTier(CensorTier.PossiblyOffensive);
 Censor.disableTier(CensorTier.SexualTerms);
-Censor.setCleanFunction((str: string) => Array.from(str).map(() => '\\*').join(''));
+Censor.setCleanFunction((str: string) => Array.from(str).map(() => String.raw`\*`).join(''));
 
 export interface CommandModule {
     data: SlashCommandBuilder;
