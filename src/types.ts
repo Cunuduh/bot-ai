@@ -25,6 +25,11 @@ Censor.disableTier(CensorTier.UserAdded);
 Censor.disableTier(CensorTier.CommonProfanity);
 Censor.disableTier(CensorTier.PossiblyOffensive);
 Censor.disableTier(CensorTier.SexualTerms);
+Censor.removeWord('nazi');
+Censor.removeWord('nazis')
+Censor.removeWord('swastika');
+Censor.removeWord('neonazi');
+Censor.removeWord('neonazis');
 Censor.setCleanFunction((str: string) => Array.from(str).map(() => String.raw`\*`).join(''));
 
 export interface CommandModule {
