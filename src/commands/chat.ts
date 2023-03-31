@@ -87,7 +87,7 @@ module.exports = <CommandModule> {
             return;
         }
         tracker.incrementUser(interaction.user.id);
-        await openai.config.createModeration({
+        const flagged = await openai.config.createModeration({
             model: 'text-moderation-latest',
             input: response.data.choices[0].message.content
         }).catch(async (error) => {
@@ -98,22 +98,23 @@ module.exports = <CommandModule> {
             return;
         }).then(async (response) => {
             if (!response) return;
-            if (response.data.results[0].flagged) {
-                responseEmbed = new EmbedBuilder()
-                    .setTitle('This violates OpenAI usage policy!');
-                await interaction.editReply({ embeds: [responseEmbed], components: [
-                    new ActionRowBuilder<ButtonBuilder>()
-                        .addComponents(
-                            new ButtonBuilder()
-                                .setCustomId('requestsRemaining')
-                                .setLabel(`${20 - tracker.getUserCount(interaction.user.id)}/20 requests remaining`)
-                                .setStyle(ButtonStyle.Secondary)
-                                .setDisabled(true)
-                        )
-                ] });
-                return;
-            }
+            return response.data.results[0].flagged;
         });
+        if (flagged) {
+            responseEmbed = new EmbedBuilder()
+                .setTitle('This violates OpenAI usage policy!');
+            await interaction.editReply({ embeds: [responseEmbed], components: [
+                new ActionRowBuilder<ButtonBuilder>()
+                    .addComponents(
+                        new ButtonBuilder()
+                            .setCustomId('requestsRemaining')
+                            .setLabel(`${20 - tracker.getUserCount(interaction.user.id)}/20 requests remaining`)
+                            .setStyle(ButtonStyle.Secondary)
+                            .setDisabled(true)
+                    )
+            ] });
+            return;
+        }
         responseEmbed = new EmbedBuilder()
             .setTitle(interaction.options.getString('prompt', true))
             .setDescription(response.data.choices[0].message.content)
