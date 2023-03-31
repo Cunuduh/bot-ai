@@ -11,12 +11,13 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/bad-words": "^3.0.1",
     "discord.js": "^14.8.0",
     "typescript": "^5.0.2"
   },
   "dependencies": {
     "@types/node": "^18.15.3",
-    "censor-sensor": "^1.0.6",
+    "bad-words": "^3.0.4",
     "dotenv": "^16.0.3",
     "openai": "^3.2.1",
     "ts-node": "^10.9.1"

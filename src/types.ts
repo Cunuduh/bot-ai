@@ -15,23 +15,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-import { CensorSensor, CensorTier } from "censor-sensor";
+import BadWordsFilter from 'bad-words';
 import { Collection, Interaction, ModalBuilder, SlashCommandBuilder } from "discord.js";
 import { ChatCompletionRequestMessage, Configuration, OpenAIApi } from "openai";
 import * as dotenv from 'dotenv';
 dotenv.config();
-export const Censor = new CensorSensor();
-Censor.disableTier(CensorTier.UserAdded);
-Censor.disableTier(CensorTier.CommonProfanity);
-Censor.disableTier(CensorTier.PossiblyOffensive);
-Censor.disableTier(CensorTier.SexualTerms);
-Censor.removeWord('nazi');
-Censor.removeWord('nazis')
-Censor.removeWord('swastika');
-Censor.removeWord('neonazi');
-Censor.removeWord('neonazis');
-Censor.setCleanFunction((str: string) => Array.from(str).map(() => String.raw`\*`).join(''));
-
+export const Filter = new BadWordsFilter();
 export interface CommandModule {
     data: SlashCommandBuilder;
     execute: (interaction: Interaction) => Promise<void>;

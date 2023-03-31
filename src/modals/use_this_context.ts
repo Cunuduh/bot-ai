@@ -17,7 +17,7 @@
 */
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, MessageActionRowComponentBuilder, ModalActionRowComponentBuilder, ModalBuilder, ModalSubmitInteraction, TextInputBuilder, TextInputStyle } from "discord.js";
 import { ChatCompletionRequestMessage } from 'openai';
-import { Censor, Conversation, ModalModule, OpenAISingleton, UserTracker } from '../types';
+import { Conversation, ModalModule, Filter, OpenAISingleton, UserTracker } from '../types';
 
 const tracker = UserTracker.getInstance;
 const openai = OpenAISingleton.getInstance;
@@ -107,7 +107,7 @@ module.exports = <ModalModule> {
             tracker.incrementUser(interaction.user.id);
             responseEmbed = new EmbedBuilder()
                 .setTitle(interaction.fields.getTextInputValue('useThisContextUserInput'))
-                .setDescription(Censor.cleanProfanityIsh(response.data.choices[0].message.content))
+                .setDescription(Filter.clean(response.data.choices[0].message.content))
                 .setColor('Blurple')
                 .setTimestamp()
                 .setFooter({ text: `Reply powered by GPT-3.5-TURBO. Not affiliated with OpenAI.` });

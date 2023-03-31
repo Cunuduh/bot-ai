@@ -17,7 +17,7 @@
 */
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { ChatCompletionRequestMessage } from 'openai';
-import { Censor, CommandModule, Conversation, OpenAISingleton, UserTracker } from '../types';
+import { CommandModule, Conversation, Filter, OpenAISingleton, UserTracker } from '../types';
 
 const tracker = UserTracker.getInstance;
 const openai = OpenAISingleton.getInstance;
@@ -89,7 +89,7 @@ module.exports = <CommandModule> {
         tracker.incrementUser(interaction.user.id);
         responseEmbed = new EmbedBuilder()
             .setTitle(interaction.options.getString('prompt', true))
-            .setDescription(Censor.cleanProfanityIsh(response.data.choices[0].message.content))
+            .setDescription(Filter.clean(response.data.choices[0].message.content))
             .setColor('Blurple')
             .setTimestamp()
             .setFooter({ text: `Reply powered by ${interaction.options.getString('model', true).toUpperCase()}. Not affiliated with OpenAI.` });
