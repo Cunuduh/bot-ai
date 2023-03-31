@@ -107,7 +107,7 @@ module.exports = <ModalModule> {
             tracker.incrementUser(interaction.user.id);
             responseEmbed = new EmbedBuilder()
                 .setTitle(interaction.fields.getTextInputValue('useThisContextUserInput'))
-                .setDescription(Censor.cleanProfanity(response.data.choices[0].message.content))
+                .setDescription(Censor.cleanProfanityIsh(response.data.choices[0].message.content))
                 .setColor('Blurple')
                 .setTimestamp()
                 .setFooter({ text: `Reply powered by GPT-3.5-TURBO. Not affiliated with OpenAI.` });

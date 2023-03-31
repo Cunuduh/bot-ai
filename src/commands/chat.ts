@@ -89,7 +89,7 @@ module.exports = <CommandModule> {
         tracker.incrementUser(interaction.user.id);
         responseEmbed = new EmbedBuilder()
             .setTitle(interaction.options.getString('prompt', true))
-            .setDescription(Censor.cleanProfanity(response.data.choices[0].message.content))
+            .setDescription(Censor.cleanProfanityIsh(response.data.choices[0].message.content))
             .setColor('Blurple')
             .setTimestamp()
             .setFooter({ text: `Reply powered by ${interaction.options.getString('model', true).toUpperCase()}. Not affiliated with OpenAI.` });
