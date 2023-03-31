@@ -15,10 +15,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
+import { CensorSensor, CensorTier } from "censor-sensor";
 import { Collection, Interaction, ModalBuilder, SlashCommandBuilder } from "discord.js";
 import { ChatCompletionRequestMessage, Configuration, OpenAIApi } from "openai";
 import * as dotenv from 'dotenv';
 dotenv.config();
+export const Censor = new CensorSensor();
+Censor.disableTier(CensorTier.UserAdded);
+Censor.disableTier(CensorTier.CommonProfanity);
+Censor.disableTier(CensorTier.PossiblyOffensive);
+Censor.disableTier(CensorTier.SexualTerms);
+Censor.setCleanFunction((str: string) => Array.from(str).map(() => '*').join(''));
 
 export interface CommandModule {
     data: SlashCommandBuilder;

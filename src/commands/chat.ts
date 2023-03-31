@@ -17,7 +17,7 @@
 */
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { ChatCompletionRequestMessage } from 'openai';
-import { CommandModule, Conversation, OpenAISingleton, UserTracker } from '../types';
+import { Censor, CommandModule, Conversation, OpenAISingleton, UserTracker } from '../types';
 
 const tracker = UserTracker.getInstance;
 const openai = OpenAISingleton.getInstance;
@@ -87,37 +87,9 @@ module.exports = <CommandModule> {
             return;
         }
         tracker.incrementUser(interaction.user.id);
-        const flagged = await openai.config.createModeration({
-            model: 'text-moderation-latest',
-            input: response.data.choices[0].message.content
-        }).catch(async (error) => {
-            console.error(error);
-            responseEmbed = new EmbedBuilder()
-                .setTitle('An error occurred while generating the response! Error code: ' + error.response.status);
-            await interaction.editReply({ embeds: [responseEmbed] });
-            return;
-        }).then(async (response) => {
-            if (!response) return;
-            return response.data.results[0].flagged;
-        });
-        if (flagged) {
-            responseEmbed = new EmbedBuilder()
-                .setTitle('This violates OpenAI usage policy!');
-            await interaction.editReply({ embeds: [responseEmbed], components: [
-                new ActionRowBuilder<ButtonBuilder>()
-                    .addComponents(
-                        new ButtonBuilder()
-                            .setCustomId('requestsRemaining')
-                            .setLabel(`${20 - tracker.getUserCount(interaction.user.id)}/20 requests remaining`)
-                            .setStyle(ButtonStyle.Secondary)
-                            .setDisabled(true)
-                    )
-            ] });
-            return;
-        }
         responseEmbed = new EmbedBuilder()
             .setTitle(interaction.options.getString('prompt', true))
-            .setDescription(response.data.choices[0].message.content)
+            .setDescription(Censor.cleanProfanity(response.data.choices[0].message.content))
             .setColor('Blurple')
             .setTimestamp()
             .setFooter({ text: `Reply powered by ${interaction.options.getString('model', true).toUpperCase()}. Not affiliated with OpenAI.` });
