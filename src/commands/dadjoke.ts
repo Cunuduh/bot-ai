@@ -59,7 +59,7 @@ module.exports = <CommandModule> {
         }
         tracker.incrementUser(interaction.user.id);
         responseEmbed = new EmbedBuilder()
-            .setTitle(interaction.options.getString('prompt', true))
+            .setTitle('Generate a random dad joke')
             .setDescription(response.data.choices[0].message.content)
             .setColor('Green')
             .setTimestamp()
