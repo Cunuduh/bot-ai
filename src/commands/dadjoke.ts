@@ -37,7 +37,7 @@ module.exports = <CommandModule> {
             return;
         }
         const response = await openai.config.createChatCompletion({
-            model: 'gpt-4',
+            model: 'gpt-3.5-turbo',
             messages: [{ role: 'user', content: 'Generate a random dad joke' }],
             max_tokens: 256,
             temperature: 1.0,
