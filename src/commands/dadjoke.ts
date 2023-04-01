@@ -40,7 +40,7 @@ module.exports = <CommandModule> {
             model: 'gpt-3.5-turbo',
             messages: [{ role: 'user', content: 'Generate a random dad joke' }],
             max_tokens: 256,
-            temperature: 1.0,
+            temperature: 1.5,
             frequency_penalty: 1.0,
             presence_penalty: 1.0,
         }).catch(async (error) => {
