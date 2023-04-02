@@ -47,6 +47,7 @@ export interface Conversation {
     root: string;
     messageId: string;
     userId: string;
+    guildId: string;
 }
 export class UserTracker {
     private static _instance: UserTracker;
@@ -90,12 +91,8 @@ export class UserTracker {
     public getCommandConversation(messageId: string) {
         return this._commandConversation.get(messageId) ?? undefined;
     }
-    public removeCommandConversation(userId: string) {
-        for (const [key, value] of this._commandConversation) {
-            if (value.userId === userId) {
-                this._commandConversation.delete(key);
-            }
-        }
+    public removeCommandConversation(userId: string, guildId: string) {
+        this._commandConversation.filter((value) => value.userId === userId && value.guildId === guildId).forEach((value, key) => this._commandConversation.delete(key));
     }
     public findRoot(messageId: string) {
         return this._commandConversation.findKey((value) => value.messageId === messageId);

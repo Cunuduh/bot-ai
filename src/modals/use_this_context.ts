@@ -66,6 +66,12 @@ module.exports = <ModalModule> {
                 ...previousMessages.conversation,
                 { role: 'user', content: interaction.fields.getTextInputValue('useThisContextUserInput') }
             ];
+            if (!interaction.guildId) {
+                responseEmbed = new EmbedBuilder()
+                    .setTitle('This command can only be used in a server!');
+                await interaction.reply({ embeds: [responseEmbed], ephemeral: true });
+                return;
+            }
             if (tracker.getUserCount(interaction.user.id) === 20) {
                 responseEmbed = new EmbedBuilder()
                     .setTitle('You have reached the maximum number of requests (20) for this hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
@@ -132,7 +138,8 @@ module.exports = <ModalModule> {
                 conversation: messagesToSend,
                 root: root,
                 messageId: res.id,
-                userId: interaction.user.id
+                userId: interaction.user.id,
+                guildId: interaction.guildId
             };
             tracker.updateCommandConversation(conversation.root, conversation);
             if (tracker.getUserCount(interaction.user.id) === 20) {

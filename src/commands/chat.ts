@@ -54,6 +54,12 @@ module.exports = <CommandModule> {
         if (system) {
             messages.unshift({ role: 'system', content: system });
         }
+        if (!interaction.guildId) {
+            responseEmbed = new EmbedBuilder()
+                .setTitle('This command can only be used in a server!');
+            await interaction.reply({ embeds: [responseEmbed], ephemeral: true });
+            return;
+        }
         if (tracker.getUserCount(interaction.user.id) === 20) {
             responseEmbed = new EmbedBuilder()
                 .setTitle('You have reached the maximum number of requests (20) for this hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
@@ -66,7 +72,7 @@ module.exports = <CommandModule> {
             await interaction.reply({ embeds: [responseEmbed], ephemeral: true });
             return;
         }
-        tracker.removeCommandConversation(interaction.user.id);
+        tracker.removeCommandConversation(interaction.user.id, interaction.guildId);
         await interaction.deferReply({ fetchReply: true });
         const response = await openai.config.createChatCompletion({
             model: interaction.options.getString('model', true),
@@ -120,7 +126,8 @@ module.exports = <CommandModule> {
             conversation: messagesToSend,
             root: res.id,
             messageId: res.id,
-            userId: interaction.user.id
+            userId: interaction.user.id,
+            guildId: interaction.guildId
         };
         tracker.updateCommandConversation(res.id, conversation);
         if (tracker.getUserCount(interaction.user.id) === 20) {
