@@ -44,7 +44,7 @@ module.exports = <ModalModule> {
             const previous = interaction.message.id;
             const root = tracker.findRoot(previous);
             if (!root) {
-                interaction.message.edit({ embeds: [interaction.message.embeds[0]], components: [new ActionRowBuilder<MessageActionRowComponentBuilder>()
+                interaction.message.edit({ embeds: [interaction.message.embeds[0]], components: [new ActionRowBuilder<ButtonBuilder>()
                     .addComponents(
                         interaction.message.components[0].components[0] as unknown as ButtonBuilder,
                         new ButtonBuilder()
@@ -81,11 +81,7 @@ module.exports = <ModalModule> {
             await interaction.deferReply({ fetchReply: true });
             interaction.message.edit({ embeds: [interaction.message.embeds[0]], components: [new ActionRowBuilder<ButtonBuilder>()
                 .addComponents(
-                    new ButtonBuilder()
-                        .setCustomId('requestsRemaining')
-                        .setLabel(`${20 - tracker.getUserCount(interaction.user.id)}/20 requests remaining`)
-                        .setStyle(ButtonStyle.Secondary)
-                        .setDisabled(true),
+                    interaction.message.components[0].components[0] as unknown as ButtonBuilder,
                     new ButtonBuilder()
                         .setCustomId('useThisContext')
                         .setLabel('Already replied')
