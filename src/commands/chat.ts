@@ -43,7 +43,6 @@ module.exports = <CommandModule> {
                 .setDescription("The system message to alter the behaviour of the AI.")
                 .setRequired(false)),
     async execute(interaction: ChatInputCommandInteraction) {
-        tracker.removeCommandConversation(interaction.user.id);
         let now = tracker.getUserTime(interaction.user.id);
         const charLimit = interaction.options.getString('model') === 'gpt-4' ? 256 : 1024;
         let actionRow: ActionRowBuilder<ButtonBuilder>;
@@ -67,6 +66,7 @@ module.exports = <CommandModule> {
             await interaction.reply({ embeds: [responseEmbed], ephemeral: true });
             return;
         }
+        tracker.removeCommandConversation(interaction.user.id);
         await interaction.deferReply({ fetchReply: true });
         const response = await openai.config.createChatCompletion({
             model: interaction.options.getString('model', true),
