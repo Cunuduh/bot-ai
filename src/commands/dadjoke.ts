@@ -29,13 +29,13 @@ module.exports = <CommandModule> {
         let now = tracker.getUserTime(interaction.user.id);
         let actionRow: ActionRowBuilder<ButtonBuilder>;
         let responseEmbed: EmbedBuilder;
-        await interaction.deferReply({ fetchReply: true });
         if (tracker.getUserCount(interaction.user.id) === 20) {
             responseEmbed = new EmbedBuilder()
                 .setTitle('You have reached the maximum number of requests (20) for this hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
-            await interaction.editReply({ embeds: [responseEmbed] });
+            await interaction.reply({ embeds: [responseEmbed], ephemeral: true });
             return;
         }
+        await interaction.deferReply({ fetchReply: true });
         const response = await openai.config.createChatCompletion({
             model: 'gpt-3.5-turbo',
             messages: [{ role: 'user', content: 'Generate a random dad joke' }],
@@ -78,7 +78,7 @@ module.exports = <CommandModule> {
             now = tracker.getUserTime(interaction.user.id);
             responseEmbed = new EmbedBuilder()
                 .setTitle('You have reached the maximum number of requests (20) for this hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
-            await interaction.followUp({ embeds: [responseEmbed] });
+            await interaction.followUp({ embeds: [responseEmbed], ephemeral: true });
             setTimeout(() => {
                 tracker.resetUserCount(interaction.user.id);
             }, 3600000);

@@ -62,7 +62,6 @@ module.exports = <ModalModule> {
             let now = tracker.getUserTime(interaction.user.id);
             let actionRow: ActionRowBuilder<ButtonBuilder>;
             let responseEmbed: EmbedBuilder;
-            await interaction.deferReply({ fetchReply: true });
             const messages: ChatCompletionRequestMessage[] = [
                 ...previousMessages.conversation,
                 { role: 'user', content: interaction.fields.getTextInputValue('useThisContextUserInput') }
@@ -70,9 +69,10 @@ module.exports = <ModalModule> {
             if (tracker.getUserCount(interaction.user.id) === 20) {
                 responseEmbed = new EmbedBuilder()
                     .setTitle('You have reached the maximum number of requests (20) for this hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
-                await interaction.editReply({ embeds: [responseEmbed] });
+                await interaction.reply({ embeds: [responseEmbed], ephemeral: true });
                 return;
             }
+            await interaction.deferReply({ fetchReply: true });
             interaction.message.edit({ embeds: [interaction.message.embeds[0]], components: [new ActionRowBuilder<ButtonBuilder>()
                 .addComponents(
                     new ButtonBuilder()
@@ -140,7 +140,7 @@ module.exports = <ModalModule> {
                 now = tracker.getUserTime(interaction.user.id);
                 responseEmbed = new EmbedBuilder()
                     .setTitle('You have reached the maximum number of requests (20) for this hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
-                await interaction.followUp({ embeds: [responseEmbed] });
+                await interaction.followUp({ embeds: [responseEmbed], ephemeral: true });
                 setTimeout(() => {
                     tracker.resetUserCount(interaction.user.id);
                 }, 3600000);

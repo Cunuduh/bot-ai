@@ -48,7 +48,6 @@ module.exports = <CommandModule> {
         const charLimit = interaction.options.getString('model') === 'gpt-4' ? 256 : 1024;
         let actionRow: ActionRowBuilder<ButtonBuilder>;
         let responseEmbed: EmbedBuilder;
-        await interaction.deferReply({ fetchReply: true });
         const messages: ChatCompletionRequestMessage[] = [
             { role: 'user', content: interaction.options.getString('prompt', true) }
         ];
@@ -59,15 +58,16 @@ module.exports = <CommandModule> {
         if (tracker.getUserCount(interaction.user.id) === 20) {
             responseEmbed = new EmbedBuilder()
                 .setTitle('You have reached the maximum number of requests (20) for this hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
-            await interaction.editReply({ embeds: [responseEmbed] });
+            await interaction.reply({ embeds: [responseEmbed], ephemeral: true });
             return;
         }
         if (interaction.options.getString('prompt', true).length > charLimit || (system && system.length > charLimit)) {
             responseEmbed = new EmbedBuilder()
                 .setTitle(`The prompt and system message must be less than ${charLimit} characters!`);
-            await interaction.editReply({ embeds: [responseEmbed] });
+            await interaction.reply({ embeds: [responseEmbed], ephemeral: true });
             return;
         }
+        await interaction.deferReply({ fetchReply: true });
         const response = await openai.config.createChatCompletion({
             model: interaction.options.getString('model', true),
             messages,
@@ -128,7 +128,7 @@ module.exports = <CommandModule> {
             now = tracker.getUserTime(interaction.user.id);
             responseEmbed = new EmbedBuilder()
                 .setTitle('You have reached the maximum number of requests (20) for this hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
-            await interaction.followUp({ embeds: [responseEmbed] });
+            await interaction.followUp({ embeds: [responseEmbed], ephemeral: true });
             setTimeout(() => {
                 tracker.resetUserCount(interaction.user.id);
             }, 3600000);

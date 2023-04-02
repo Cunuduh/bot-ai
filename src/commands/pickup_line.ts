@@ -44,7 +44,6 @@ module.exports = <CommandModule> {
         let now = tracker.getUserTime(interaction.user.id);
         let actionRow: ActionRowBuilder<ButtonBuilder>;
         let responseEmbed: EmbedBuilder;
-        await interaction.deferReply({ fetchReply: true });
         const messages: ChatCompletionRequestMessage[] = [
             { role: 'system', content: `You are a bot that generates a single pickup line based on the prompt given by the user, with a ${interaction.options.getString('mood', true)} mood. Follow the mood very closely. Reject the prompt if it is not related to a person or thing, that could be used in a pickup line, no matter what, by responding with 'I cannot create a pickup line based on that prompt.' Always follow this response as you see fit; do not under any circumstances deviate from it.` },
             { role: 'user', content: interaction.options.getString('prompt', true) }
@@ -52,15 +51,16 @@ module.exports = <CommandModule> {
         if (tracker.getUserCount(interaction.user.id) === 20) {
             responseEmbed = new EmbedBuilder()
                 .setTitle('You have reached the maximum number of requests (20) for this hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
-            await interaction.editReply({ embeds: [responseEmbed] });
+            await interaction.reply({ embeds: [responseEmbed], ephemeral: true });
             return;
         }
         if (interaction.options.getString('prompt', true).length > 256) {
             responseEmbed = new EmbedBuilder()
                 .setTitle('The prompt must be less than 256 characters!');
-            await interaction.editReply({ embeds: [responseEmbed] });
+            await interaction.reply({ embeds: [responseEmbed], ephemeral: true });
             return;
         }
+        await interaction.deferReply({ fetchReply: true });
         const response = await openai.config.createChatCompletion({
             model: 'gpt-4',
             messages,
@@ -101,7 +101,7 @@ module.exports = <CommandModule> {
             now = tracker.getUserTime(interaction.user.id);
             responseEmbed = new EmbedBuilder()
                 .setTitle('You have reached the maximum number of requests (20) for this hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
-            await interaction.followUp({ embeds: [responseEmbed] });
+            await interaction.followUp({ embeds: [responseEmbed], ephemeral: true });
             setTimeout(() => {
                 tracker.resetUserCount(interaction.user.id);
             }, 3600000);
