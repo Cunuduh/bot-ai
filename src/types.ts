@@ -19,6 +19,7 @@ import BadWordsFilter from 'bad-words';
 import { Collection, Interaction, ModalBuilder, SlashCommandBuilder } from "discord.js";
 import { ChatCompletionRequestMessage, Configuration, OpenAIApi } from "openai";
 import * as dotenv from 'dotenv';
+import internal from 'stream';
 dotenv.config();
 export const Filter = new BadWordsFilter({ placeHolder: String.raw`\*` });
 export interface CommandModule {
@@ -49,41 +50,70 @@ export interface Conversation {
     userId: string;
     guildId: string;
 }
+class UserData {
+    image: number;
+    text: number;
+    constructor(image: number, text: number) {
+        this.image = image;
+        this.text = text;
+    }
+}
 export class UserTracker {
     private static _instance: UserTracker;
-    private _users: Map<string, number>;
-    private _userTimes: Map<string, number>;
+    private _userCounts: Map<string, UserData>;
+    private _userTimes: Map<string, UserData>;
     private _commandConversation: Collection<string, Conversation>;
     private constructor() {
-        this._users = new Map();
+        this._userCounts = new Map();
         this._userTimes = new Map();
         this._commandConversation = new Collection();
     }
     public static get getInstance() {
         return this._instance || (this._instance = new this());
     }
-    public incrementUser(user: string) {
-        if (this._users.has(user)) {
-            const count = this._users.get(user);
-            if (count === undefined) return;
-            this._users.set(user, count + 1);
-        } else {
-            this._users.set(user, 1);
+    public incrementUser(user: string, type: 'image' | 'text') {
+        switch (type) {
+            case 'text':
+                if (this._userCounts.has(user)) {
+                    const count = this._userCounts.get(user);
+                    if (count === undefined) return;
+                    this._userCounts.set(user, new UserData(count.image, count.text + 1));
+                } else {
+                    this._userCounts.set(user, new UserData(0, 1));
+                }
+                break;
+            case 'image':
+                if (this._userCounts.has(user)) {
+                    const count = this._userCounts.get(user);
+                    if (count === undefined) return;
+                    this._userCounts.set(user, new UserData(count.image + 1, count.text));
+                }
+                else {
+                    this._userCounts.set(user, new UserData(1, 0));
+                }
+                break;
         }
     }
     public getUserCount(user: string) {
-        return this._users.get(user) ?? 0;
+        return this._userCounts.get(user) ?? new UserData(0, 0);
     }
     public resetUserCount(user: string) {
-        if (this._users.has(user)) {
-            this._users.set(user, 0);
+        if (this._userCounts.has(user)) {
+            this._userCounts.set(user, new UserData(0, 0));
         }
     }
-    public setUserTime(user: string, time: number) {
-        this._userTimes.set(user, time);
+    public setUserTime(user: string, time: number, type: 'image' | 'text') {
+        switch (type) {
+            case 'text':
+                this._userTimes.set(user, new UserData(0, time));
+                break;
+            case 'image':
+                this._userTimes.set(user, new UserData(time, 0));
+                break;
+        }
     }
     public getUserTime(user: string) {
-        return this._userTimes.get(user) ?? 0;
+        return this._userTimes.get(user) ?? new UserData(0, 0);
     }
     public updateCommandConversation(root: string, conv: Conversation) {
         this._commandConversation.set(root, conv);

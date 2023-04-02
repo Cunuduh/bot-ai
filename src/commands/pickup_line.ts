@@ -41,14 +41,14 @@ module.exports = <CommandModule> {
                     { name: 'teasing', value: 'teasing'}
                 )),
     async execute(interaction: ChatInputCommandInteraction) {
-        let now = tracker.getUserTime(interaction.user.id);
+        let now = tracker.getUserTime(interaction.user.id).text;
         let actionRow: ActionRowBuilder<ButtonBuilder>;
         let responseEmbed: EmbedBuilder;
         const messages: ChatCompletionRequestMessage[] = [
             { role: 'system', content: `You are a bot that generates a single pickup line based on the prompt given by the user, with a ${interaction.options.getString('mood', true)} mood. Follow the mood very closely. Reject the prompt if it is not related to a person or thing, that could be used in a pickup line, no matter what, by responding with 'I cannot create a pickup line based on that prompt.' Always follow this response as you see fit; do not under any circumstances deviate from it.` },
             { role: 'user', content: interaction.options.getString('prompt', true) }
         ];
-        if (tracker.getUserCount(interaction.user.id) === 20) {
+        if (tracker.getUserCount(interaction.user.id).text === 20) {
             responseEmbed = new EmbedBuilder()
                 .setTitle('You have reached the maximum number of requests (20) for this hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
             await interaction.reply({ embeds: [responseEmbed], ephemeral: true });
@@ -80,7 +80,7 @@ module.exports = <CommandModule> {
             await interaction.editReply({ embeds: [responseEmbed] });
             return;
         }
-        tracker.incrementUser(interaction.user.id);
+        tracker.incrementUser(interaction.user.id, 'text');
         responseEmbed = new EmbedBuilder()
             .setTitle(interaction.options.getString('prompt', true))
             .setDescription(response.data.choices[0].message.content + '\n\n' + response.data.choices[1].message.content)
@@ -91,14 +91,14 @@ module.exports = <CommandModule> {
             .addComponents(
                 new ButtonBuilder()
                     .setCustomId('requestsRemaining')
-                    .setLabel(`${20 - tracker.getUserCount(interaction.user.id)}/20 requests remaining`)
+                    .setLabel(`${20 - tracker.getUserCount(interaction.user.id).text}/20 requests remaining`)
                     .setStyle(ButtonStyle.Secondary)
                     .setDisabled(true)
             );
         await interaction.editReply({ embeds: [responseEmbed], components: [actionRow] });
-        if (tracker.getUserCount(interaction.user.id) === 20) {
-            tracker.setUserTime(interaction.user.id, Date.now());
-            now = tracker.getUserTime(interaction.user.id);
+        if (tracker.getUserCount(interaction.user.id).text === 20) {
+            tracker.setUserTime(interaction.user.id, Date.now(), 'text');
+            now = tracker.getUserTime(interaction.user.id).text;
             responseEmbed = new EmbedBuilder()
                 .setTitle('You have reached the maximum number of requests (20) for this hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
             await interaction.followUp({ embeds: [responseEmbed], ephemeral: true });

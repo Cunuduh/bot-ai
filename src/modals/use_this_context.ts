@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, MessageActionRowComponentBuilder, ModalActionRowComponentBuilder, ModalBuilder, ModalSubmitInteraction, TextInputBuilder, TextInputStyle } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, ModalActionRowComponentBuilder, ModalBuilder, ModalSubmitInteraction, TextInputBuilder, TextInputStyle } from "discord.js";
 import { ChatCompletionRequestMessage } from 'openai';
 import { Conversation, ModalModule, Filter, OpenAISingleton, UserTracker } from '../types';
 
@@ -59,7 +59,7 @@ module.exports = <ModalModule> {
             }
             const previousMessages = tracker.getCommandConversation(root);
             if (!previousMessages) return;
-            let now = tracker.getUserTime(interaction.user.id);
+            let now = tracker.getUserTime(interaction.user.id).text;
             let actionRow: ActionRowBuilder<ButtonBuilder>;
             let responseEmbed: EmbedBuilder;
             const messages: ChatCompletionRequestMessage[] = [
@@ -72,7 +72,7 @@ module.exports = <ModalModule> {
                 await interaction.reply({ embeds: [responseEmbed], ephemeral: true });
                 return;
             }
-            if (tracker.getUserCount(interaction.user.id) === 20) {
+            if (tracker.getUserCount(interaction.user.id).text === 20) {
                 responseEmbed = new EmbedBuilder()
                     .setTitle('You have reached the maximum number of requests (20) for this hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
                 await interaction.reply({ embeds: [responseEmbed], ephemeral: true });
@@ -106,7 +106,7 @@ module.exports = <ModalModule> {
                 await interaction.editReply({ embeds: [responseEmbed] });
                 return;
             }
-            tracker.incrementUser(interaction.user.id);
+            tracker.incrementUser(interaction.user.id, 'text');
             responseEmbed = new EmbedBuilder()
                 .setTitle(interaction.fields.getTextInputValue('useThisContextUserInput'))
                 .setDescription(Filter.clean(response.data.choices[0].message.content))
@@ -117,7 +117,7 @@ module.exports = <ModalModule> {
                 .addComponents(
                     new ButtonBuilder()
                         .setCustomId('requestsRemaining')
-                        .setLabel(`${20 - tracker.getUserCount(interaction.user.id)}/20 requests remaining`)
+                        .setLabel(`${20 - tracker.getUserCount(interaction.user.id).text}/20 requests remaining`)
                         .setStyle(ButtonStyle.Secondary)
                         .setDisabled(true),
                     new ButtonBuilder()
@@ -138,9 +138,9 @@ module.exports = <ModalModule> {
                 guildId: interaction.guildId
             };
             tracker.updateCommandConversation(conversation.root, conversation);
-            if (tracker.getUserCount(interaction.user.id) === 20) {
-                tracker.setUserTime(interaction.user.id, Date.now());
-                now = tracker.getUserTime(interaction.user.id);
+            if (tracker.getUserCount(interaction.user.id).text === 20) {
+                tracker.setUserTime(interaction.user.id, Date.now(), 'text');
+                now = tracker.getUserTime(interaction.user.id).text;
                 responseEmbed = new EmbedBuilder()
                     .setTitle('You have reached the maximum number of requests (20) for this hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
                 await interaction.followUp({ embeds: [responseEmbed], ephemeral: true });

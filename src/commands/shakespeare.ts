@@ -31,14 +31,14 @@ module.exports = <CommandModule> {
                 .setDescription('The prompt to translate.')
                 .setRequired(true)),
     async execute(interaction: ChatInputCommandInteraction) {
-        let now = tracker.getUserTime(interaction.user.id);
+        let now = tracker.getUserTime(interaction.user.id).text;
         let actionRow: ActionRowBuilder<ButtonBuilder>;
         let responseEmbed: EmbedBuilder;
         const messages: ChatCompletionRequestMessage[] = [
             { role: 'system', content: 'You are a bot that translates English to Shakespearean English. If the prompt is not in English, interpret it as best you can and then translate it into Shakespearean.' },
             { role: 'user', content: interaction.options.getString('prompt', true) }
         ];
-        if (tracker.getUserCount(interaction.user.id) === 20) {
+        if (tracker.getUserCount(interaction.user.id).text === 20) {
             responseEmbed = new EmbedBuilder()
                 .setTitle('You have reached the maximum number of requests (20) for this hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
             await interaction.reply({ embeds: [responseEmbed], ephemeral: true });
@@ -69,7 +69,7 @@ module.exports = <CommandModule> {
             await interaction.editReply({ embeds: [responseEmbed] });
             return;
         }
-        tracker.incrementUser(interaction.user.id);
+        tracker.incrementUser(interaction.user.id, 'text');
         responseEmbed = new EmbedBuilder()
             .setTitle(interaction.options.getString('prompt', true))
             .setDescription(response.data.choices[0].message.content)
@@ -80,14 +80,14 @@ module.exports = <CommandModule> {
             .addComponents(
                 new ButtonBuilder()
                     .setCustomId('requestsRemaining')
-                    .setLabel(`${20 - tracker.getUserCount(interaction.user.id)}/20 requests remaining`)
+                    .setLabel(`${20 - tracker.getUserCount(interaction.user.id).text}/20 requests remaining`)
                     .setStyle(ButtonStyle.Secondary)
                     .setDisabled(true)
             );
         await interaction.editReply({ embeds: [responseEmbed], components: [actionRow] });
-        if (tracker.getUserCount(interaction.user.id) === 20) {
-            tracker.setUserTime(interaction.user.id, Date.now());
-            now = tracker.getUserTime(interaction.user.id);
+        if (tracker.getUserCount(interaction.user.id).text === 20) {
+            tracker.setUserTime(interaction.user.id, Date.now(), 'text');
+            now = tracker.getUserTime(interaction.user.id).text;
             responseEmbed = new EmbedBuilder()
                 .setTitle('You have reached the maximum number of requests (20) for this hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
             await interaction.followUp({ embeds: [responseEmbed], ephemeral: true });

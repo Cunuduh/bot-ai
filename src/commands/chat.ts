@@ -43,7 +43,7 @@ module.exports = <CommandModule> {
                 .setDescription("The system message to alter the behaviour of the AI.")
                 .setRequired(false)),
     async execute(interaction: ChatInputCommandInteraction) {
-        let now = tracker.getUserTime(interaction.user.id);
+        let now = tracker.getUserTime(interaction.user.id).text;
         const charLimit = interaction.options.getString('model') === 'gpt-4' ? 256 : 1024;
         let actionRow: ActionRowBuilder<ButtonBuilder>;
         let responseEmbed: EmbedBuilder;
@@ -60,7 +60,7 @@ module.exports = <CommandModule> {
             await interaction.reply({ embeds: [responseEmbed], ephemeral: true });
             return;
         }
-        if (tracker.getUserCount(interaction.user.id) === 20) {
+        if (tracker.getUserCount(interaction.user.id).text === 20) {
             responseEmbed = new EmbedBuilder()
                 .setTitle('You have reached the maximum number of requests (20) for this hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
             await interaction.reply({ embeds: [responseEmbed], ephemeral: true });
@@ -92,7 +92,7 @@ module.exports = <CommandModule> {
             await interaction.editReply({ embeds: [responseEmbed] });
             return;
         }
-        tracker.incrementUser(interaction.user.id);
+        tracker.incrementUser(interaction.user.id, 'text');
         responseEmbed = new EmbedBuilder()
             .setTitle(interaction.options.getString('prompt', true))
             .setDescription(Filter.clean(response.data.choices[0].message.content))
@@ -103,7 +103,7 @@ module.exports = <CommandModule> {
             .addComponents(
                 new ButtonBuilder()
                     .setCustomId('requestsRemaining')
-                    .setLabel(`${20 - tracker.getUserCount(interaction.user.id)}/20 requests remaining`)
+                    .setLabel(`${20 - tracker.getUserCount(interaction.user.id).text}/20 requests remaining`)
                     .setStyle(ButtonStyle.Secondary)
                     .setDisabled(true),
                 interaction.options.getString('model', true) === 'gpt-3.5-turbo' ?
@@ -130,9 +130,9 @@ module.exports = <CommandModule> {
             guildId: interaction.guildId
         };
         tracker.updateCommandConversation(res.id, conversation);
-        if (tracker.getUserCount(interaction.user.id) === 20) {
-            tracker.setUserTime(interaction.user.id, Date.now());
-            now = tracker.getUserTime(interaction.user.id);
+        if (tracker.getUserCount(interaction.user.id).text === 20) {
+            tracker.setUserTime(interaction.user.id, Date.now(), 'text');
+            now = tracker.getUserTime(interaction.user.id).text;
             responseEmbed = new EmbedBuilder()
                 .setTitle('You have reached the maximum number of requests (20) for this hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
             await interaction.followUp({ embeds: [responseEmbed], ephemeral: true });
