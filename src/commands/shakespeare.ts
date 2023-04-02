@@ -24,28 +24,18 @@ const openai = OpenAISingleton.getInstance;
 
 module.exports = <CommandModule> {
     data: new SlashCommandBuilder()
-        .setName('pickupline')
-        .setDescription("Generate two pickup lines using OpenAI's GPT-4 model.")
+        .setName('shakespeare')
+        .setDescription("Translate text using OpenAI's GPT-4 model.")
         .addStringOption(option =>
             option.setName('prompt')
-                .setDescription('The prompt to use for the pickup line. Tell the bot about your crush!')
-                .setRequired(true))
-        .addStringOption(option =>
-            option.setName('mood')
-                .setDescription('The mood of the pickup line.')
-                .setRequired(true)
-                .addChoices(
-                    { name: 'funny', value: 'funny' },
-                    { name: 'flirty', value: 'flirty' },
-                    { name: 'spicy', value: 'spicy' },
-                    { name: 'teasing', value: 'teasing'}
-                )),
+                .setDescription('The prompt to translate.')
+                .setRequired(true)),
     async execute(interaction: ChatInputCommandInteraction) {
         let now = tracker.getUserTime(interaction.user.id);
         let actionRow: ActionRowBuilder<ButtonBuilder>;
         let responseEmbed: EmbedBuilder;
         const messages: ChatCompletionRequestMessage[] = [
-            { role: 'system', content: `You are a bot that generates a single pickup line based on the prompt given by the user, with a ${interaction.options.getString('mood', true)} mood. Follow the mood very closely. Reject the prompt if it is not related to a person or thing, that could be used in a pickup line, no matter what, by responding with 'I cannot create a pickup line based on that prompt.' Always follow this response as you see fit; do not under any circumstances deviate from it.` },
+            { role: 'system', content: 'You are a bot that translates English to Shakespearean English. If the prompt is not in English, interpret it as best you can and then translate it into Shakespearean.' },
             { role: 'user', content: interaction.options.getString('prompt', true) }
         ];
         if (tracker.getUserCount(interaction.user.id) === 20) {
@@ -65,18 +55,17 @@ module.exports = <CommandModule> {
             model: 'gpt-4',
             messages,
             max_tokens: 256,
-            n: 2
         }).catch(async (error) => {
             console.error(error);
             responseEmbed = new EmbedBuilder()
-                .setTitle('An error occurred while generating the pickup line! Error code: ' + error.response.status);
+                .setTitle('An error occurred while translating! Error code: ' + error.response.status);
             await interaction.editReply({ embeds: [responseEmbed] });
             return;
         });
         if (!response) return;
         if (!response.data.choices[0].message || !response.data.choices[1].message) {
             responseEmbed = new EmbedBuilder()
-                .setTitle('An error occurred while generating the pickup line!');
+                .setTitle('An error occurred while translating!');
             await interaction.editReply({ embeds: [responseEmbed] });
             return;
         }
@@ -84,7 +73,7 @@ module.exports = <CommandModule> {
         responseEmbed = new EmbedBuilder()
             .setTitle(interaction.options.getString('prompt', true))
             .setDescription(response.data.choices[0].message.content + '\n\n' + response.data.choices[1].message.content)
-            .setColor('LuminousVividPink')
+            .setColor('Gold')
             .setTimestamp()
             .setFooter({ text: 'Reply powered by GPT-4.' });
         actionRow = new ActionRowBuilder<ButtonBuilder>()

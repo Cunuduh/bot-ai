@@ -92,7 +92,7 @@ module.exports = <CommandModule> {
             .setDescription(Filter.clean(response.data.choices[0].message.content))
             .setColor('Blurple')
             .setTimestamp()
-            .setFooter({ text: `Reply powered by ${interaction.options.getString('model', true).toUpperCase()}. Not affiliated with OpenAI.` });
+            .setFooter({ text: `Reply powered by ${interaction.options.getString('model', true).toUpperCase()}.` });
         actionRow = new ActionRowBuilder<ButtonBuilder>()
             .addComponents(
                 new ButtonBuilder()

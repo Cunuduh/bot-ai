@@ -63,7 +63,7 @@ module.exports = <CommandModule> {
             .setDescription(response.data.choices[0].message.content)
             .setColor('Green')
             .setTimestamp()
-            .setFooter({ text: 'Reply powered by GPT-3.5-TURBO. Not affiliated with OpenAI.' });
+            .setFooter({ text: 'Reply powered by GPT-3.5-TURBO.' });
         actionRow = new ActionRowBuilder<ButtonBuilder>()
             .addComponents(
                 new ButtonBuilder()
