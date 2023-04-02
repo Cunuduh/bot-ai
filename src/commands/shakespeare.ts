@@ -63,7 +63,7 @@ module.exports = <CommandModule> {
             return;
         });
         if (!response) return;
-        if (!response.data.choices[0].message || !response.data.choices[1].message) {
+        if (!response.data.choices[0].message) {
             responseEmbed = new EmbedBuilder()
                 .setTitle('An error occurred while translating!');
             await interaction.editReply({ embeds: [responseEmbed] });
@@ -72,7 +72,7 @@ module.exports = <CommandModule> {
         tracker.incrementUser(interaction.user.id);
         responseEmbed = new EmbedBuilder()
             .setTitle(interaction.options.getString('prompt', true))
-            .setDescription(response.data.choices[0].message.content + '\n\n' + response.data.choices[1].message.content)
+            .setDescription(response.data.choices[0].message.content)
             .setColor('Gold')
             .setTimestamp()
             .setFooter({ text: 'Reply powered by GPT-4.' });
