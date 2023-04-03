@@ -78,7 +78,7 @@ module.exports = <CommandModule> {
             tracker.setUserTime(interaction.user.id, Date.now(), 'image');
             now = tracker.getUserTime(interaction.user.id).image;
             responseEmbed = new EmbedBuilder()
-                .setTitle('You have reached the maximum number of requests (3) for this hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
+                .setTitle('You have reached the maximum number of requests (2) for this hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
             await interaction.followUp({ embeds: [responseEmbed], ephemeral: true });
             setTimeout(() => {
                 tracker.resetUserCount(interaction.user.id);
