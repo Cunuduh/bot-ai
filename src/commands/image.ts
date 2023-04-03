@@ -33,9 +33,9 @@ module.exports = <CommandModule> {
         let now = tracker.getUserTime(interaction.user.id).image;
         let actionRow: ActionRowBuilder<ButtonBuilder>;
         let responseEmbed: EmbedBuilder;
-        if (tracker.getUserCount(interaction.user.id).image === 2) {
+        if (tracker.getUserCount(interaction.user.id).image === 1) {
             responseEmbed = new EmbedBuilder()
-                .setTitle('You have reached the maximum number of requests (2) for this hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
+                .setTitle('You have reached the maximum number of requests (1) for 2 hours! Please try again at: <t:' + (Math.round(now / 1000) + 7200) + ':t>');
             await interaction.reply({ embeds: [responseEmbed], ephemeral: true });
             return;
         }
@@ -43,7 +43,7 @@ module.exports = <CommandModule> {
         const response = await openai.config.createImage({
             prompt: interaction.options.getString('prompt', true),
             n: 1,
-            size: '512x512'
+            size: '256x256'
         }).catch(async (error) => {
             console.error(error);
             responseEmbed = new EmbedBuilder()
@@ -69,20 +69,20 @@ module.exports = <CommandModule> {
             .addComponents(
                 new ButtonBuilder()
                     .setCustomId('requestsRemaining')
-                    .setLabel(`${2 - tracker.getUserCount(interaction.user.id).image}/2 requests remaining`)
+                    .setLabel(`${1 - tracker.getUserCount(interaction.user.id).image}/1 requests remaining`)
                     .setStyle(ButtonStyle.Secondary)
                     .setDisabled(true)
             );
         await interaction.editReply({ embeds: [responseEmbed], components: [actionRow] });
-        if (tracker.getUserCount(interaction.user.id).image === 2) {
+        if (tracker.getUserCount(interaction.user.id).image === 1) {
             tracker.setUserTime(interaction.user.id, Date.now(), 'image');
             now = tracker.getUserTime(interaction.user.id).image;
             responseEmbed = new EmbedBuilder()
-                .setTitle('You have reached the maximum number of requests (2) for this hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
+                .setTitle('You have reached the maximum number of requests (1) for 2 hours! Please try again at: <t:' + (Math.round(now / 1000) + 7200) + ':t>');
             await interaction.followUp({ embeds: [responseEmbed], ephemeral: true });
             setTimeout(() => {
                 tracker.resetUserCount(interaction.user.id);
-            }, 3600000);
+            }, 7200000);
         }
     }
 };
