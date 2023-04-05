@@ -61,8 +61,8 @@ module.exports = <CommandModule> {
                             .setStyle(ButtonStyle.Secondary)
                             .setDisabled(true)
                     )
-                ] 
-            });
+                ] });
+                await interaction.followUp({ embeds: [{ title: 'You have reached the maximum number of requests (1) for 2 hours! Please try again at: <t:' + (Math.round(now / 1000) + 7200) + ':t>' }], ephemeral: true });
                 return;
             }
             await interaction.editReply({ embeds: [responseEmbed] });
