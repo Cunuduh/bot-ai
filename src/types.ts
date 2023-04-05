@@ -19,7 +19,7 @@ import BadWordsFilter from 'bad-words';
 import { Collection, Interaction, ModalBuilder, SlashCommandBuilder } from "discord.js";
 import { ChatCompletionRequestMessage, Configuration, OpenAIApi } from "openai";
 import * as dotenv from 'dotenv';
-import internal from 'stream';
+
 dotenv.config();
 export const Filter = new BadWordsFilter({ placeHolder: String.raw`\*` });
 export interface CommandModule {

@@ -48,6 +48,23 @@ module.exports = <CommandModule> {
             console.error(error);
             responseEmbed = new EmbedBuilder()
                 .setTitle('An error occurred while generating the image! Error code: ' + error.response.status);
+            if (error.response.status === 400) {
+                responseEmbed = new EmbedBuilder()
+                    .setTitle('Possibly inappropriate content detected!');
+                tracker.incrementUser(interaction.user.id, 'image');
+                await interaction.editReply({ embeds: [responseEmbed], components: [
+                    new ActionRowBuilder<ButtonBuilder>()
+                    .addComponents(
+                        new ButtonBuilder()
+                            .setCustomId('requestsRemaining')
+                            .setLabel(`${1 - tracker.getUserCount(interaction.user.id).image}/1 requests remaining`)
+                            .setStyle(ButtonStyle.Secondary)
+                            .setDisabled(true)
+                    )
+                ] 
+            });
+                return;
+            }
             await interaction.editReply({ embeds: [responseEmbed] });
             return;
         });
