@@ -16,10 +16,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 import fs from 'node:fs';
-import { Client, Collection, Events, GatewayIntentBits, Interaction, Message, Partials } from 'discord.js';
-import { CommandModule, ModalModule } from './types';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, Client, Collection, Events, GatewayIntentBits, Interaction, Message, Partials } from 'discord.js';
+import { CommandModule, ModalModule, UserTracker } from './types';
 import * as dotenv from 'dotenv';
 dotenv.config();
+const tracker = UserTracker.getInstance;
 
 const token = process.env.BOT_TOKEN;
 const client = new Client({ intents: [GatewayIntentBits.Guilds], partials: [Partials.Channel] });
@@ -64,6 +65,15 @@ client.on(Events.InteractionCreate, async (interaction: Interaction) => {
 client.on(Events.InteractionCreate, async (interaction: Interaction) => {
     if (!interaction.isButton()) return;
     if (interaction.customId === 'useThisContext') {
+        const cantUseContextActionRow = new ActionRowBuilder<ButtonBuilder>()
+            .addComponents(
+                interaction.message.components[0].components[0] as unknown as ButtonBuilder,
+                new ButtonBuilder()
+                    .setCustomId('useThisContext')
+                    .setLabel('Started a new conversation, cannot reply')
+                    .setStyle(ButtonStyle.Secondary)
+                    .setDisabled(true)
+            );
         if (!interaction.message.interaction) {
             let msg: Message = interaction.message;
             while (msg.reference) {
@@ -75,8 +85,16 @@ client.on(Events.InteractionCreate, async (interaction: Interaction) => {
                 await interaction.reply({ content: 'You can\'t use this context!', ephemeral: true });
                 return;
             }
+            if (!tracker.findRoot(interaction.message.id)) {
+                interaction.message.edit({ embeds: [interaction.message.embeds[0]], components: [cantUseContextActionRow] });
+                return;
+            }
         } else if (interaction.user.id !== interaction.message.interaction.user.id) {
             await interaction.reply({ content: 'You can\'t use this context!', ephemeral: true });
+            return;
+        }
+        if (!tracker.findRoot(interaction.message.id)) {
+            interaction.message.edit({ embeds: [interaction.message.embeds[0]], components: [cantUseContextActionRow] });
             return;
         }
         const modal: ModalModule | undefined = modals.get('m_useThisContext');
