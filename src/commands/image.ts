@@ -49,6 +49,8 @@ module.exports = <CommandModule> {
             responseEmbed = new EmbedBuilder()
                 .setTitle('An error occurred while generating the image! Error code: ' + error.response.status);
             if (error.response.status === 400) {
+                tracker.setUserTime(interaction.user.id, Date.now(), 'image');
+                now = tracker.getUserTime(interaction.user.id).image;
                 responseEmbed = new EmbedBuilder()
                     .setTitle('Possibly inappropriate content detected!');
                 tracker.incrementUser(interaction.user.id, 'image');
@@ -63,6 +65,9 @@ module.exports = <CommandModule> {
                     )
                 ] });
                 await interaction.followUp({ embeds: [{ title: 'You have reached the maximum number of requests (1) for 2 hours! Please try again at: <t:' + (Math.round(now / 1000) + 7200) + ':t>' }], ephemeral: true });
+                setTimeout(() => {
+                    tracker.resetUserCount(interaction.user.id);
+                }, 7200000);
                 return;
             }
             await interaction.editReply({ embeds: [responseEmbed] });
