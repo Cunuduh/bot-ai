@@ -19,6 +19,6 @@ BotGPT is a Discord bot utilizing OpenAI's latest blazingly fast and high qualit
 # Attribution
 Leave this repository in the About Me of any fork you make, please! 😃
 
-Don't be an asshole and try to submit this bot to Top.gg. You will fail!
+Don't be an asshole and try to submit this bot to Top.gg. You will fail! (This is not a bluff totally)
 
 https://github.com/Cunuduh/pickup_line_gpt/
