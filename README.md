@@ -14,6 +14,8 @@ BotGPT is a Discord bot utilizing OpenAI's latest blazingly fast and high qualit
 
 `/image`: Generate an image with a prompt using the DALL-E API.
 
+# Showcase
+![image](https://raw.githubusercontent.com/Cunuduh/pickup_line_gpt/main/Screenshot_18.png)
 # Attribution
 Leave this repository in the About Me of any fork you make, please! 😃
 
