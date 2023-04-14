@@ -55,7 +55,7 @@ module.exports = <CommandModule> {
             model: 'gpt-4',
             messages,
             max_tokens: 256,
-        }).catch(async (error) => {
+        }).catch(async error => {
             console.error(error);
             responseEmbed = new EmbedBuilder()
                 .setTitle('An error occurred while translating! Error code: ' + error.response.status);

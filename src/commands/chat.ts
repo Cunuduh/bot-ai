@@ -78,7 +78,7 @@ module.exports = <CommandModule> {
             model: interaction.options.getString('model', true),
             messages,
             max_tokens: charLimit
-        }).catch(async (error) => {
+        }).catch(async error => {
             console.error(error);
             responseEmbed = new EmbedBuilder()
                 .setTitle('An error occurred while generating the response! Error code: ' + error.response.status);

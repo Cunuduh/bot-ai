@@ -50,19 +50,17 @@ client.on(Events.InteractionCreate, async (interaction: Interaction) => {
     if (!interaction.isCommand()) return;
     const command: CommandModule | undefined = commands.get(interaction.commandName);
     if (!command) return;
-    try {
-        await command.execute(interaction);
-    } catch (error) {
+        await command.execute(interaction).catch(async error => {
         console.error(error);
         if (!interaction.deferred) {
             await interaction.deferReply({ ephemeral: true });
             await interaction.editReply({ embeds: [{ title: 'There was an error while executing this command!' }] });
         } else if (!interaction.replied) {
-            await interaction.editReply({ embeds: [{ title: 'There was an error while executing this command!' }] }).catch((error) => {
+            await interaction.editReply({ embeds: [{ title: 'There was an error while executing this command!' }] }).catch(error => {
                 console.error(error);
             });
         }
-    }
+    });
 });
 client.on(Events.InteractionCreate, async (interaction: Interaction) => {
     if (!interaction.isButton()) return;
@@ -88,7 +86,8 @@ client.on(Events.InteractionCreate, async (interaction: Interaction) => {
                 return;
             }
             if (!tracker.findRoot(interaction.message.id)) {
-                interaction.message.edit({ embeds: [interaction.message.embeds[0]], components: [cantUseContextActionRow] });
+                await interaction.message.edit({ embeds: [interaction.message.embeds[0]], components: [cantUseContextActionRow] });
+                await interaction.reply({ content: 'Started a new conversation, cannot reply.', ephemeral: true });
                 return;
             }
         } else if (interaction.user.id !== interaction.message.interaction.user.id) {
@@ -96,7 +95,8 @@ client.on(Events.InteractionCreate, async (interaction: Interaction) => {
             return;
         }
         if (!tracker.findRoot(interaction.message.id)) {
-            interaction.message.edit({ embeds: [interaction.message.embeds[0]], components: [cantUseContextActionRow] });
+            await interaction.message.edit({ embeds: [interaction.message.embeds[0]], components: [cantUseContextActionRow] });
+            await interaction.reply({ content: 'Started a new conversation, cannot reply.', ephemeral: true });
             return;
         }
         const modal: ModalModule | undefined = modals.get('m_useThisContext');
@@ -109,17 +109,15 @@ client.on(Events.InteractionCreate, async (interaction: Interaction) => {
     if (!interaction.isModalSubmit()) return;
     const modal: ModalModule | undefined = modals.get(interaction.customId);
     if (!modal) return;
-    try {
-        await modal.execute(interaction);
-    } catch (error) {
+        await modal.execute(interaction).catch(async error => {
         console.error(error);
         if (!interaction.deferred) {
             await interaction.deferReply({ ephemeral: true });
             await interaction.editReply({ embeds: [{ title: 'There was an error while executing this command!' }] });
         } else if (!interaction.replied) {
-            await interaction.editReply({ embeds: [{ title: 'There was an error while executing this command!' }] }).catch((error) => {
+            await interaction.editReply({ embeds: [{ title: 'There was an error while executing this command!' }] }).catch(error => {
                 console.error(error);
             });
         }
-    }
+    });
 });

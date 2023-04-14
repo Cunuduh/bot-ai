@@ -43,7 +43,7 @@ module.exports = <CommandModule> {
             temperature: 1.5,
             frequency_penalty: 1.0,
             presence_penalty: 1.0,
-        }).catch(async (error) => {
+        }).catch(async error => {
             console.error(error);
             responseEmbed = new EmbedBuilder()
                 .setTitle('An error occurred while generating the dad joke! Error code: ' + error.response.status);

@@ -44,7 +44,7 @@ module.exports = <CommandModule> {
             prompt: interaction.options.getString('prompt', true),
             n: 1,
             size: '256x256'
-        }).catch(async (error) => {
+        }).catch(async error => {
             console.error(error);
             responseEmbed = new EmbedBuilder()
                 .setTitle('An error occurred while generating the image! Error code: ' + error.response.status);

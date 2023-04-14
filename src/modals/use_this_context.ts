@@ -53,8 +53,7 @@ module.exports = <ModalModule> {
                             .setStyle(ButtonStyle.Secondary)
                             .setDisabled(true)
                     ) 
-                ] 
-            });
+                ] });
                 await interaction.deferReply({ ephemeral: true });
                 await interaction.editReply({ content: 'You started a new conversation and can no longer reply to this one.' });
                 return;
@@ -94,7 +93,7 @@ module.exports = <ModalModule> {
                 model: 'gpt-3.5-turbo',
                 messages,
                 max_tokens: 1024
-            }).catch(async (error) => {
+            }).catch(async error => {
                 console.error(error);
                 responseEmbed = new EmbedBuilder()
                     .setTitle('An error occurred while generating the response! Error code: ' + error.response.status);

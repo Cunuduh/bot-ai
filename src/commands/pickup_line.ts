@@ -66,7 +66,7 @@ module.exports = <CommandModule> {
             messages,
             max_tokens: 256,
             n: 2
-        }).catch(async (error) => {
+        }).catch(async error => {
             console.error(error);
             responseEmbed = new EmbedBuilder()
                 .setTitle('An error occurred while generating the pickup line! Error code: ' + error.response.status);
