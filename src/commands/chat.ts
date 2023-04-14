@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder, Message } from 'discord.js';
 import { ChatCompletionRequestMessage } from 'openai';
 import { CommandModule, Conversation, Filter, OpenAISingleton, UserTracker } from '../types';
 
@@ -117,7 +117,12 @@ module.exports = <CommandModule> {
                     .setStyle(ButtonStyle.Secondary)
                     .setDisabled(true)
             );
-        const res = await interaction.editReply({ embeds: [responseEmbed], components: [actionRow] });
+        const content = '**Flagged words:** ||' + response.data.choices[0].message.content.split(/\s/).filter(Boolean).filter(word => Filter.clean(word) !== word).join(', ') + '||';
+        let res: Message;
+        if (content !== '**Flagged words:** ||||')
+            res = await interaction.editReply({ embeds: [responseEmbed], components: [actionRow], content });
+        else
+            res = await interaction.editReply({ embeds: [responseEmbed], components: [actionRow] });
         const messagesToSend: ChatCompletionRequestMessage[] = [
             ...messages,
             { role: 'assistant', content: response.data.choices[0].message.content }

@@ -58,7 +58,9 @@ client.on(Events.InteractionCreate, async (interaction: Interaction) => {
             await interaction.deferReply({ ephemeral: true });
             await interaction.editReply({ embeds: [{ title: 'There was an error while executing this command!' }] });
         } else if (!interaction.replied) {
-            await interaction.editReply({ embeds: [{ title: 'There was an error while executing this command!' }] });
+            await interaction.editReply({ embeds: [{ title: 'There was an error while executing this command!' }] }).catch((error) => {
+                console.error(error);
+            });
         }
     }
 });
@@ -115,7 +117,9 @@ client.on(Events.InteractionCreate, async (interaction: Interaction) => {
             await interaction.deferReply({ ephemeral: true });
             await interaction.editReply({ embeds: [{ title: 'There was an error while executing this command!' }] });
         } else if (!interaction.replied) {
-            await interaction.editReply({ embeds: [{ title: 'There was an error while executing this command!' }] });
+            await interaction.editReply({ embeds: [{ title: 'There was an error while executing this command!' }] }).catch((error) => {
+                console.error(error);
+            });
         }
     }
 });

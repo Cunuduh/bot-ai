@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, ModalActionRowComponentBuilder, ModalBuilder, ModalSubmitInteraction, TextInputBuilder, TextInputStyle } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, Message, ModalActionRowComponentBuilder, ModalBuilder, ModalSubmitInteraction, TextInputBuilder, TextInputStyle } from "discord.js";
 import { ChatCompletionRequestMessage } from 'openai';
 import { Conversation, ModalModule, Filter, OpenAISingleton, UserTracker } from '../types';
 
@@ -127,7 +127,12 @@ module.exports = <ModalModule> {
                         .setLabel('Reply')
                         .setStyle(ButtonStyle.Primary)
                 );
-            const res = await interaction.editReply({ embeds: [responseEmbed], components: [actionRow] });
+            const content = '**Flagged words:** ||' + response.data.choices[0].message.content.split(/\s/).filter(Boolean).filter(word => Filter.clean(word) !== word).join(', ') + '||';
+            let res: Message;
+            if (content !== '**Flagged words:** ||||')
+                res = await interaction.editReply({ embeds: [responseEmbed], components: [actionRow], content });
+            else
+                res = await interaction.editReply({ embeds: [responseEmbed], components: [actionRow] });
             const messagesToSend: ChatCompletionRequestMessage[] = [
                 ...messages,
                 { role: 'assistant', content: response.data.choices[0].message.content }
