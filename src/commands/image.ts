@@ -15,7 +15,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
+import fs from 'fs';
+import { ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { CommandModule, OpenAISingleton, UserTracker } from '../types';
 
 const tracker = UserTracker.getInstance;
@@ -43,7 +44,8 @@ module.exports = <CommandModule> {
         const response = await openai.config.createImage({
             prompt: interaction.options.getString('prompt', true),
             n: 1,
-            size: '256x256'
+            size: '256x256',
+            response_format: 'b64_json'
         }).catch(async error => {
             console.error(error);
             responseEmbed = new EmbedBuilder()
@@ -74,16 +76,20 @@ module.exports = <CommandModule> {
             return;
         });
         if (!response) return;
-        if (!response.data.data[0].url) {
+        if (!response.data.data[0].b64_json) {
             responseEmbed = new EmbedBuilder()
                 .setTitle('An error occurred while generating the image!');
             await interaction.editReply({ embeds: [responseEmbed] });
             return;
         }
         tracker.incrementUser(interaction.user.id, 'image');
+        const filename = response.data.data[0].b64_json.slice(0, 127);
+        const tempDir = fs.mkdtempSync('tmp-');
+        fs.writeFileSync(tempDir + `/${filename}.png`, Buffer.from(response.data.data[0].b64_json, 'base64'));
+        const attachment = new AttachmentBuilder(`${tempDir}/${filename}.png`);
         responseEmbed = new EmbedBuilder()
             .setTitle(interaction.options.getString('prompt', true))
-            .setImage(response.data.data[0].url)
+            .setImage(`attachment://${filename}.png`)
             .setColor('Purple')
             .setTimestamp()
             .setFooter({ text: 'Image generated with DALL-E.' });
@@ -95,7 +101,8 @@ module.exports = <CommandModule> {
                     .setStyle(ButtonStyle.Secondary)
                     .setDisabled(true)
             );
-        await interaction.editReply({ embeds: [responseEmbed], components: [actionRow] });
+        await interaction.editReply({ embeds: [responseEmbed], components: [actionRow], files: [attachment] });
+        fs.rmSync(tempDir, { recursive: true });
         if (tracker.getUserCount(interaction.user.id).image === 1) {
             tracker.setUserTime(interaction.user.id, Date.now(), 'image');
             now = tracker.getUserTime(interaction.user.id).image;
