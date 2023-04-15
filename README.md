@@ -18,7 +18,7 @@ By default, reply is only available while using GPT-3.5. Will add reply for GPT-
 
 20 requests per hour for chat features (Everything except `/image`).
 
-1 request per 2 hours for `/image`.
+1 request per hour for `/image`.
 # Showcase
 ## Chat
 ![image](https://raw.githubusercontent.com/Cunuduh/pickup_line_gpt/main/images/ss_01.png)

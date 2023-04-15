@@ -36,7 +36,7 @@ module.exports = <CommandModule> {
         let responseEmbed: EmbedBuilder;
         if (tracker.getUserCount(interaction.user.id).image === 1) {
             responseEmbed = new EmbedBuilder()
-                .setTitle('You have reached the maximum number of requests (1) for 2 hours! Please try again at: <t:' + (Math.round(now / 1000) + 7200) + ':t>');
+                .setTitle('You have reached the maximum number of requests (1) for 1 hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
             await interaction.reply({ embeds: [responseEmbed], ephemeral: true });
             return;
         }
@@ -66,10 +66,10 @@ module.exports = <CommandModule> {
                             .setDisabled(true)
                     )
                 ] });
-                await interaction.followUp({ embeds: [{ title: 'You have reached the maximum number of requests (1) for 2 hours! Please try again at: <t:' + (Math.round(now / 1000) + 7200) + ':t>' }], ephemeral: true });
+                await interaction.followUp({ embeds: [{ title: 'You have reached the maximum number of requests (1) for 1 hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>' }], ephemeral: true });
                 setTimeout(() => {
                     tracker.resetUserCount(interaction.user.id);
-                }, 7200000);
+                }, 3600000);
                 return;
             }
             await interaction.editReply({ embeds: [responseEmbed] });
@@ -107,11 +107,11 @@ module.exports = <CommandModule> {
             tracker.setUserTime(interaction.user.id, Date.now(), 'image');
             now = tracker.getUserTime(interaction.user.id).image;
             responseEmbed = new EmbedBuilder()
-                .setTitle('You have reached the maximum number of requests (1) for 2 hours! Please try again at: <t:' + (Math.round(now / 1000) + 7200) + ':t>');
+                .setTitle('You have reached the maximum number of requests (1) for 1 hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
             await interaction.followUp({ embeds: [responseEmbed], ephemeral: true });
             setTimeout(() => {
                 tracker.resetUserCount(interaction.user.id);
-            }, 7200000);
+            }, 3600000);
         }
     }
 };
