@@ -71,7 +71,7 @@ module.exports = <CommandModule> {
         }
         tracker.incrementUser(interaction.user.id, 'text');
         responseEmbed = new EmbedBuilder()
-            .setTitle(interaction.options.getString('prompt', true))
+            .setTitle(interaction.options.getString('prompt', true).slice(0, 255))
             .setDescription(response.data.choices[0].message.content)
             .setColor('Gold')
             .setTimestamp()

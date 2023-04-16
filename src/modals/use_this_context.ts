@@ -109,7 +109,7 @@ module.exports = <ModalModule> {
             }
             tracker.incrementUser(interaction.user.id, 'text');
             responseEmbed = new EmbedBuilder()
-                .setTitle(interaction.fields.getTextInputValue('useThisContextUserInput'))
+                .setTitle(interaction.fields.getTextInputValue('useThisContextUserInput').slice(0, 255))
                 .setDescription(response.data.choices[0].message.content) // Pass the content string to Filter.clean() to remove any profanity
                 .setColor('Blurple')
                 .setTimestamp()

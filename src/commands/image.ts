@@ -88,7 +88,7 @@ module.exports = <CommandModule> {
         fs.writeFileSync(tempDir + `/${filename}.png`, Buffer.from(response.data.data[0].b64_json, 'base64'));
         const attachment = new AttachmentBuilder(`${tempDir}/${filename}.png`);
         responseEmbed = new EmbedBuilder()
-            .setTitle(interaction.options.getString('prompt', true))
+            .setTitle(interaction.options.getString('prompt', true).slice(0, 255))
             .setImage(`attachment://${filename}.png`)
             .setColor('Purple')
             .setTimestamp()
