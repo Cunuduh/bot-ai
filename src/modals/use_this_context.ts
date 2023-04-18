@@ -126,15 +126,17 @@ module.exports = <ModalModule> {
                         .setLabel('Reply')
                         .setStyle(ButtonStyle.Primary)
                 );
-            const content = '**Flagged words:** ||' + response.data.choices[0].message.content.split(/\s/).filter(Boolean).filter(word => Filter.clean(word) !== word).join(', ') + '||';
+            const text = response.data.choices[0].message.content;
+            const content = Filter.isProfane(text) ? '**Flagged words:** ||' + text.split(/\s/).filter(Boolean).filter(word => Filter.clean(word) !== word).join(', ') + '||'
+                : undefined;
             let res: Message;
-            if (content !== '**Flagged words:** ||||')
+            if (content)
                 res = await interaction.editReply({ embeds: [responseEmbed], components: [actionRow], content });
             else
                 res = await interaction.editReply({ embeds: [responseEmbed], components: [actionRow] });
             const messagesToSend: ChatCompletionRequestMessage[] = [
                 ...messages,
-                { role: 'assistant', content: response.data.choices[0].message.content }
+                { role: 'assistant', content: text }
             ];
             const conversation: Conversation = {
                 conversation: messagesToSend,
