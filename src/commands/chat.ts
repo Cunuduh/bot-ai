@@ -31,8 +31,8 @@ module.exports = <CommandModule> {
                 .setDescription('The model to use for the response.')
                 .setRequired(true)
                 .addChoices(
-                    { name: 'gpt-3.5-turbo', value: 'gpt-3.5-turbo' },
-                    { name: 'gpt-4', value: 'gpt-4' },
+                    { name: 'gpt-3.5-turbo-0613', value: 'gpt-3.5-turbo-0613' },
+                    { name: 'gpt-4-0613', value: 'gpt-4-0613' },
                 ))
         .addStringOption(option =>
             option.setName('prompt')
@@ -44,7 +44,7 @@ module.exports = <CommandModule> {
                 .setRequired(false)),
     async execute(interaction: ChatInputCommandInteraction) {
         let now = tracker.getUserTime(interaction.user.id).text;
-        const charLimit = interaction.options.getString('model') === 'gpt-4' ? 256 : 1024;
+        const charLimit = interaction.options.getString('model') === 'gpt-4-0613' ? 256 : 1024;
         let actionRow: ActionRowBuilder<ButtonBuilder>;
         let responseEmbed: EmbedBuilder;
         const messages: ChatCompletionRequestMessage[] = [
@@ -95,7 +95,7 @@ module.exports = <CommandModule> {
         tracker.incrementUser(interaction.user.id, 'text');
         responseEmbed = new EmbedBuilder()
             .setTitle(interaction.options.getString('prompt', true).slice(0, 255))
-            .setDescription(response.data.choices[0].message.content) // Pass the content string to Filter.clean() to remove any profanity
+            .setDescription(response.data.choices[0].message.content || null) // Pass the content string to Filter.clean() to remove any profanity
             .setColor('Blurple')
             .setTimestamp()
             .setFooter({ text: `Reply powered by ${interaction.options.getString('model', true).toUpperCase()}.` });
@@ -106,7 +106,7 @@ module.exports = <CommandModule> {
                     .setLabel(`${20 - tracker.getUserCount(interaction.user.id).text}/20 requests remaining`)
                     .setStyle(ButtonStyle.Secondary)
                     .setDisabled(true),
-                interaction.options.getString('model', true) === 'gpt-3.5-turbo' ?
+                interaction.options.getString('model', true) === 'gpt-3.5-turbo-0613' ?
                 new ButtonBuilder()
                     .setCustomId('useThisContext')
                     .setLabel('Reply')
@@ -117,7 +117,7 @@ module.exports = <CommandModule> {
                     .setStyle(ButtonStyle.Secondary)
                     .setDisabled(true)
             );
-        const text = response.data.choices[0].message.content;
+        const text = response.data.choices[0].message.content || "";
         const content = Filter.isProfane(text) ? '**Flagged words:** ||' + text.split(/\s/).filter(Boolean).filter(word => Filter.clean(word) !== word).join(', ') + '||'
             : undefined;
         let res: Message;

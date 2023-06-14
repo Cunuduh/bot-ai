@@ -90,7 +90,7 @@ module.exports = <ModalModule> {
                         .setDisabled(true)
                 ) ] });
             const response = await openai.config.createChatCompletion({
-                model: 'gpt-3.5-turbo',
+                model: 'gpt-3.5-turbo-0613',
                 messages,
                 max_tokens: 1024
             }).catch(async error => {
@@ -110,10 +110,10 @@ module.exports = <ModalModule> {
             tracker.incrementUser(interaction.user.id, 'text');
             responseEmbed = new EmbedBuilder()
                 .setTitle(interaction.fields.getTextInputValue('useThisContextUserInput').slice(0, 255))
-                .setDescription(response.data.choices[0].message.content) // Pass the content string to Filter.clean() to remove any profanity
+                .setDescription(response.data.choices[0].message.content || null) // Pass the content string to Filter.clean() to remove any profanity
                 .setColor('Blurple')
                 .setTimestamp()
-                .setFooter({ text: `Reply powered by GPT-3.5-TURBO.` });
+                .setFooter({ text: `Reply powered by gpt-3.5-turbo-0613.` });
             actionRow = new ActionRowBuilder<ButtonBuilder>()
                 .addComponents(
                     new ButtonBuilder()
@@ -126,7 +126,7 @@ module.exports = <ModalModule> {
                         .setLabel('Reply')
                         .setStyle(ButtonStyle.Primary)
                 );
-            const text = response.data.choices[0].message.content;
+            const text = response.data.choices[0].message.content || "";
             const content = Filter.isProfane(text) ? '**Flagged words:** ||' + text.split(/\s/).filter(Boolean).filter(word => Filter.clean(word) !== word).join(', ') + '||'
                 : undefined;
             let res: Message;

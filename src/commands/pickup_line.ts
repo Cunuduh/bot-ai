@@ -62,7 +62,7 @@ module.exports = <CommandModule> {
         }
         await interaction.deferReply({ fetchReply: true });
         const response = await openai.config.createChatCompletion({
-            model: 'gpt-4',
+            model: 'gpt-4-0613',
             messages,
             max_tokens: 256,
             n: 2

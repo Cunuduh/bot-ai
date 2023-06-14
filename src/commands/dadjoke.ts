@@ -37,7 +37,7 @@ module.exports = <CommandModule> {
         }
         await interaction.deferReply({ fetchReply: true });
         const response = await openai.config.createChatCompletion({
-            model: 'gpt-3.5-turbo',
+            model: 'gpt-3.5-turbo-0613',
             messages: [{ role: 'user', content: 'Generate a random dad joke' }],
             max_tokens: 256,
             temperature: 1.5,
@@ -60,10 +60,10 @@ module.exports = <CommandModule> {
         tracker.incrementUser(interaction.user.id, 'text');
         responseEmbed = new EmbedBuilder()
             .setTitle('Generate a random dad joke')
-            .setDescription(response.data.choices[0].message.content)
+            .setDescription(response.data.choices[0].message.content || null)
             .setColor('Green')
             .setTimestamp()
-            .setFooter({ text: 'Reply powered by GPT-3.5-TURBO.' });
+            .setFooter({ text: 'Reply powered by gpt-3.5-turbo-0613.' });
         actionRow = new ActionRowBuilder<ButtonBuilder>()
             .addComponents(
                 new ButtonBuilder()

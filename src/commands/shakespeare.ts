@@ -52,7 +52,7 @@ module.exports = <CommandModule> {
         }
         await interaction.deferReply({ fetchReply: true });
         const response = await openai.config.createChatCompletion({
-            model: 'gpt-4',
+            model: 'gpt-4-0613',
             messages,
             max_tokens: 256,
         }).catch(async error => {
@@ -72,7 +72,7 @@ module.exports = <CommandModule> {
         tracker.incrementUser(interaction.user.id, 'text');
         responseEmbed = new EmbedBuilder()
             .setTitle(interaction.options.getString('prompt', true).slice(0, 255))
-            .setDescription(response.data.choices[0].message.content)
+            .setDescription(response.data.choices[0].message.content || null)
             .setColor('Gold')
             .setTimestamp()
             .setFooter({ text: 'Reply powered by GPT-4.' });
