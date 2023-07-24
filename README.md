@@ -1,7 +1,7 @@
-# BotGPT
+# BotAI
 Chat with OpenAI's GPT-4 or generate images with DALL-E 2. Not affiliated with OpenAI.
 
-BotGPT is a Discord bot utilizing OpenAI's latest blazingly fast and high quality AI models, DALL-E 2 and GPT-4. Generate pickup lines, dad jokes, translate into Shakespearean, or just chat with GPT-4. Generate unique art images with DALL-E.
+BotAI is a Discord bot utilizing OpenAI's latest blazingly fast and high quality AI models, DALL-E 2 and GPT-4. Generate pickup lines, dad jokes, translate into Shakespearean, or just chat with GPT-4. Generate unique art images with DALL-E.
 
 # Features
 `/chat`: Chat with GPT-4 or GPT-3.5.
