@@ -14,9 +14,9 @@ BotGPT is a Discord bot utilizing OpenAI's latest blazingly fast and high qualit
 
 `/image`: Generate an image with a prompt using the DALL-E API.
 ## Limits
-By default, reply is only available while using GPT-3.5. Will add reply for GPT-4 soon, for paying users only.
+By default, reply is only available while using GPT-3.5. Will add reply for GPT-4 soon.
 
-20 requests per hour for chat features (Everything except `/image`).
+20 requests per hour for chat features.
 
 1 request per hour for `/image`.
 # Showcase
@@ -25,8 +25,4 @@ By default, reply is only available while using GPT-3.5. Will add reply for GPT-
 ## Generate image
 ![image](https://raw.githubusercontent.com/Cunuduh/pickup_line_gpt/main/images/ss_02.png)
 # Attribution
-Leave this repository in the About Me of any fork you make, please! 😃
-
-Don't be an asshole and try to submit this bot to Top.gg. You will fail! (This is not a bluff totally)
-
 [Repository](https://github.com/Cunuduh/pickup_line_gpt/)
