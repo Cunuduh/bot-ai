@@ -16,102 +16,88 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 import fs from 'fs';
-import { ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
-import { CommandModule, OpenAISingleton, UserTracker } from '../types';
+import { OpenAI } from 'openai';
+import { AttachmentBuilder, ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
+import { CommandModule, ServerConfigs } from '../types';
 
-const tracker = UserTracker.getInstance;
-const openai = OpenAISingleton.getInstance;
 
 module.exports = <CommandModule> {
     data: new SlashCommandBuilder()
         .setName('image')
-        .setDescription("Generate an image with DALL-E.")
+        .setDescription('Generate an image with DALL-E.')
+        .addStringOption(option =>
+            option.setName('model')
+                .setDescription('The model to use for the image.')
+                .setRequired(true)
+                .addChoices(
+                    { name: 'dall-e-2', value: 'dall-e-2'},
+                    { name: 'dall-e-3', value: 'dall-e-3'}
+                ))
         .addStringOption(option =>
             option.setName('prompt')
                 .setDescription('The prompt to use for the image.')
-                .setRequired(true)),
+                .setRequired(true))
+        .addStringOption(option =>
+            option.setName('size')
+                .setDescription('The size of the image.')
+                .setRequired(true)
+                .addChoices(
+                    { name: '256x256', value: '256x256'},
+                    { name: '512x512', value: '512x512'},
+                    { name: '1024x1024', value: '1024x1024'},
+                    { name: '1792x1024', value: '1792x1024'},
+                    { name: '1024x1792', value: '1024x1792'}
+                ))
+        .addStringOption(option =>
+            option.setName('quality')
+                .setDescription('The quality of the image. Only applicable for DALL-E 3.')
+                .setRequired(false)
+                .addChoices(
+                    { name: 'standard', value: 'standard'},
+                    { name: 'hd', value: 'hd'}
+                )),
     async execute(interaction: ChatInputCommandInteraction) {
-        let now = tracker.getUserTime(interaction.user.id).image;
-        let actionRow: ActionRowBuilder<ButtonBuilder>;
+        if (!interaction.guildId) return;
+        const openai: OpenAI = ServerConfigs.get(interaction.guildId) ?? ServerConfigs.set(interaction.guildId, new OpenAI()).get(interaction.guildId)!;
         let responseEmbed: EmbedBuilder;
-        if (tracker.getUserCount(interaction.user.id).image === 1) {
-            responseEmbed = new EmbedBuilder()
-                .setTitle('You have reached the maximum number of requests (1) for 1 hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
-            await interaction.reply({ embeds: [responseEmbed], ephemeral: true });
-            return;
-        }
         await interaction.deferReply({ fetchReply: true });
-        const response = await openai.config.createImage({
+        const quality = interaction.options.getString('quality', false) as OpenAI.ImageGenerateParams['quality'];
+        const response = await openai.images.generate({
+            model: interaction.options.getString('model', true),
             prompt: interaction.options.getString('prompt', true),
+            quality: interaction.options.getString('model', true) === 'dall-e-3' ? quality : undefined,
             n: 1,
-            size: '256x256',
+            size: interaction.options.getString('size', true) as OpenAI.ImageGenerateParams['size'],
             response_format: 'b64_json'
         }).catch(async error => {
             console.error(error);
-            responseEmbed = new EmbedBuilder()
-                .setTitle('An error occurred while generating the image! Error code: ' + error.response.status);
-            if (error.response.status === 400) {
-                tracker.setUserTime(interaction.user.id, Date.now(), 'image');
-                now = tracker.getUserTime(interaction.user.id).image;
+            if (error instanceof OpenAI.APIError) {
                 responseEmbed = new EmbedBuilder()
-                    .setTitle('Possibly inappropriate content detected!');
-                tracker.incrementUser(interaction.user.id, 'image');
-                await interaction.editReply({ embeds: [responseEmbed], components: [
-                    new ActionRowBuilder<ButtonBuilder>()
-                    .addComponents(
-                        new ButtonBuilder()
-                            .setCustomId('requestsRemaining')
-                            .setLabel(`${1 - tracker.getUserCount(interaction.user.id).image}/1 requests remaining`)
-                            .setStyle(ButtonStyle.Secondary)
-                            .setDisabled(true)
-                    )
-                ] });
-                await interaction.followUp({ embeds: [{ title: 'You have reached the maximum number of requests (1) for 1 hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>' }], ephemeral: true });
-                setTimeout(() => {
-                    tracker.resetUserCount(interaction.user.id);
-                }, 3600000);
-                return;
+                    .setTitle(`An error occurred while generating the image! ${error.message}`)
+            } else {
+                responseEmbed = new EmbedBuilder()
+                    .setTitle('An error occurred while generating the image!');
             }
             await interaction.editReply({ embeds: [responseEmbed] });
             return;
         });
         if (!response) return;
-        if (!response.data.data[0].b64_json) {
+        if (!response.data[0].b64_json) {
             responseEmbed = new EmbedBuilder()
                 .setTitle('An error occurred while generating the image!');
             await interaction.editReply({ embeds: [responseEmbed] });
             return;
         }
-        tracker.incrementUser(interaction.user.id, 'image');
-        const filename = response.data.data[0].b64_json.slice(0, 127);
+        const filename = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
         const tempDir = fs.mkdtempSync('tmp-');
-        fs.writeFileSync(tempDir + `/${filename}.png`, Buffer.from(response.data.data[0].b64_json, 'base64'));
+        fs.writeFileSync(tempDir + `/${filename}.png`, Buffer.from(response.data[0].b64_json, 'base64'));
         const attachment = new AttachmentBuilder(`${tempDir}/${filename}.png`);
         responseEmbed = new EmbedBuilder()
             .setTitle(interaction.options.getString('prompt', true).slice(0, 255))
             .setImage(`attachment://${filename}.png`)
             .setColor('Purple')
             .setTimestamp()
-            .setFooter({ text: 'Image generated with DALL-E.' });
-        actionRow = new ActionRowBuilder<ButtonBuilder>()
-            .addComponents(
-                new ButtonBuilder()
-                    .setCustomId('requestsRemaining')
-                    .setLabel(`${1 - tracker.getUserCount(interaction.user.id).image}/1 requests remaining`)
-                    .setStyle(ButtonStyle.Secondary)
-                    .setDisabled(true)
-            );
-        await interaction.editReply({ embeds: [responseEmbed], components: [actionRow], files: [attachment] });
+        await interaction.editReply({ embeds: [responseEmbed], files: [attachment] });
         fs.rmSync(tempDir, { recursive: true });
-        if (tracker.getUserCount(interaction.user.id).image === 1) {
-            tracker.setUserTime(interaction.user.id, Date.now(), 'image');
-            now = tracker.getUserTime(interaction.user.id).image;
-            responseEmbed = new EmbedBuilder()
-                .setTitle('You have reached the maximum number of requests (1) for 1 hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
-            await interaction.followUp({ embeds: [responseEmbed], ephemeral: true });
-            setTimeout(() => {
-                tracker.resetUserCount(interaction.user.id);
-            }, 3600000);
-        }
     }
 };

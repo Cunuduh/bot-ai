@@ -67,9 +67,8 @@ client.on(Events.InteractionCreate, async (interaction: Interaction) => {
     if (interaction.customId === 'useThisContext') {
         const cantUseContextActionRow = new ActionRowBuilder<ButtonBuilder>()
             .addComponents(
-                interaction.message.components[0].components[0] as unknown as ButtonBuilder,
                 new ButtonBuilder()
-                    .setCustomId('useThisContext')
+                    .setCustomId('cannotReply')
                     .setLabel('Started a new conversation, cannot reply')
                     .setStyle(ButtonStyle.Secondary)
                     .setDisabled(true)

@@ -16,40 +16,51 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder, Message } from 'discord.js';
-import { ChatCompletionRequestMessage } from 'openai';
-import { CommandModule, Conversation, Filter, OpenAISingleton, UserTracker } from '../types';
+import { OpenAI, APIError } from 'openai';
+import { CommandModule, Conversation, ServerConfigs, UserTracker } from '../types';
 
 const tracker = UserTracker.getInstance;
-const openai = OpenAISingleton.getInstance;
 
 module.exports = <CommandModule> {
     data: new SlashCommandBuilder()
         .setName('chat')
-        .setDescription("Chat with GPT-3.5 or GPT-4.")
+        .setDescription("Chat with a GPT model.")
         .addStringOption(option =>
             option.setName('model')
                 .setDescription('The model to use for the response.')
-                .setRequired(true)
-                .addChoices(
-                    { name: 'gpt-3.5-turbo-0613', value: 'gpt-3.5-turbo-0613' },
-                    { name: 'gpt-4-0613', value: 'gpt-4-0613' },
-                ))
+                .setRequired(true))
         .addStringOption(option =>
             option.setName('prompt')
                 .setDescription('The prompt to communicate with the AI.')
                 .setRequired(true))
         .addStringOption(option =>
+            option.setName('imageurl')
+                .setDescription('The image URL to send to the AI if it has vision. Delimit multiple image links with a comma.')
+                .setRequired(false))
+        .addStringOption(option =>
             option.setName('system')
                 .setDescription("The system message to alter the behaviour of the AI.")
                 .setRequired(false)),
     async execute(interaction: ChatInputCommandInteraction) {
-        let now = tracker.getUserTime(interaction.user.id).text;
-        const charLimit = interaction.options.getString('model') === 'gpt-4-0613' ? 256 : 1024;
+        if (!interaction.guildId) return;
+        const openai: OpenAI = ServerConfigs.get(interaction.guildId) ?? ServerConfigs.set(interaction.guildId, new OpenAI()).get(interaction.guildId)!;
         let actionRow: ActionRowBuilder<ButtonBuilder>;
         let responseEmbed: EmbedBuilder;
-        const messages: ChatCompletionRequestMessage[] = [
+        let messages: OpenAI.ChatCompletionMessageParam[] = [
             { role: 'user', content: interaction.options.getString('prompt', true) }
         ];
+        if (interaction.options.getString('imageurl', false)) {
+            const imageUrls = interaction.options.getString('imageurl', false)!.split(',').map(url => {
+                return { "type": "image_url", "image_url": { "url": url, "detail": "auto" } };
+            }) satisfies OpenAI.ChatCompletionContentPartImage[];
+            messages = [
+                { role: 'user', content: [
+                    { "type": "text", "text": interaction.options.getString('prompt', true) },
+                    ...imageUrls
+                ]
+                },
+            ];
+        }
         const system = interaction.options.getString('system');
         if (system) {
             messages.unshift({ role: 'system', content: system });
@@ -60,72 +71,46 @@ module.exports = <CommandModule> {
             await interaction.reply({ embeds: [responseEmbed], ephemeral: true });
             return;
         }
-        if (tracker.getUserCount(interaction.user.id).text === 20) {
-            responseEmbed = new EmbedBuilder()
-                .setTitle('You have reached the maximum number of requests (20) for this hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
-            await interaction.reply({ embeds: [responseEmbed], ephemeral: true });
-            return;
-        }
-        if (interaction.options.getString('prompt', true).length > charLimit || (system && system.length > charLimit)) {
-            responseEmbed = new EmbedBuilder()
-                .setTitle(`The prompt and system message must be less than ${charLimit} characters!`);
-            await interaction.reply({ embeds: [responseEmbed], ephemeral: true });
-            return;
-        }
-        tracker.removeCommandConversation(interaction.user.id, interaction.guildId);
         await interaction.deferReply({ fetchReply: true });
-        const response = await openai.config.createChatCompletion({
+        const response = await openai.chat.completions.create({
             model: interaction.options.getString('model', true),
             messages,
-            max_tokens: charLimit
+            max_tokens: Infinity
         }).catch(async error => {
             console.error(error);
-            responseEmbed = new EmbedBuilder()
-                .setTitle('An error occurred while generating the response! Error code: ' + error.response.status);
+            if (error instanceof APIError) {
+                responseEmbed = new EmbedBuilder()
+                    .setTitle(`An error occurred while generating the response! ${error.message}`);
+            } else {
+                responseEmbed = new EmbedBuilder()
+                    .setTitle(`An error occurred while generating the response!`);
+            }
             await interaction.editReply({ embeds: [responseEmbed] });
             return;
         });
         if (!response) return;
-        if (!response.data.choices[0].message) {
+        if (!response.choices[0].message) {
             responseEmbed = new EmbedBuilder()
                 .setTitle('An error occurred while generating the response!');
             await interaction.editReply({ embeds: [responseEmbed] });
             return;
         }
-        tracker.incrementUser(interaction.user.id, 'text');
         responseEmbed = new EmbedBuilder()
             .setTitle(interaction.options.getString('prompt', true).slice(0, 255))
-            .setDescription(response.data.choices[0].message.content || null) // Pass the content string to Filter.clean() to remove any profanity
+            .setDescription(response.choices[0].message.content || null) 
             .setColor('Blurple')
             .setTimestamp()
-            .setFooter({ text: `Reply powered by ${interaction.options.getString('model', true).toUpperCase()}.` });
+            .setFooter({ text: interaction.options.getString('model', true) })
         actionRow = new ActionRowBuilder<ButtonBuilder>()
             .addComponents(
-                new ButtonBuilder()
-                    .setCustomId('requestsRemaining')
-                    .setLabel(`${20 - tracker.getUserCount(interaction.user.id).text}/20 requests remaining`)
-                    .setStyle(ButtonStyle.Secondary)
-                    .setDisabled(true),
-                interaction.options.getString('model', true) === 'gpt-3.5-turbo-0613' ?
                 new ButtonBuilder()
                     .setCustomId('useThisContext')
                     .setLabel('Reply')
                     .setStyle(ButtonStyle.Primary)
-                : new ButtonBuilder()
-                    .setCustomId('useThisContext')
-                    .setLabel('Reply only available for GPT-3.5')
-                    .setStyle(ButtonStyle.Secondary)
-                    .setDisabled(true)
             );
-        const text = response.data.choices[0].message.content || "";
-        const content = Filter.isProfane(text) ? '**Flagged words:** ||' + text.split(/\s/).filter(Boolean).filter(word => Filter.clean(word) !== word).join(', ') + '||'
-            : undefined;
-        let res: Message;
-        if (content)
-            res = await interaction.editReply({ embeds: [responseEmbed], components: [actionRow], content });
-        else
-            res = await interaction.editReply({ embeds: [responseEmbed], components: [actionRow] });
-        const messagesToSend: ChatCompletionRequestMessage[] = [
+        const text = response.choices[0].message.content || "";
+        let res: Message = await interaction.editReply({ embeds: [responseEmbed], components: [actionRow] });
+        const messagesToSend: OpenAI.ChatCompletionMessageParam[] = [
             ...messages,
             { role: 'assistant', content: text }
         ];
@@ -136,16 +121,6 @@ module.exports = <CommandModule> {
             userId: interaction.user.id,
             guildId: interaction.guildId
         };
-        tracker.updateCommandConversation(res.id, conversation);
-        if (tracker.getUserCount(interaction.user.id).text === 20) {
-            tracker.setUserTime(interaction.user.id, Date.now(), 'text');
-            now = tracker.getUserTime(interaction.user.id).text;
-            responseEmbed = new EmbedBuilder()
-                .setTitle('You have reached the maximum number of requests (20) for this hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
-            await interaction.followUp({ embeds: [responseEmbed], ephemeral: true });
-            setTimeout(() => {
-                tracker.resetUserCount(interaction.user.id);
-            }, 3600000);
-        }
+        tracker.updateCommandConversation(conversation.root, conversation);
     }
 };

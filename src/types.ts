@@ -15,13 +15,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-import BadWordsFilter from 'bad-words';
 import { Collection, Interaction, ModalBuilder, SlashCommandBuilder } from "discord.js";
-import { ChatCompletionRequestMessage, Configuration, OpenAIApi } from "openai";
+import { OpenAI } from "openai";
 import * as dotenv from 'dotenv';
 
 dotenv.config();
-export const Filter = new BadWordsFilter({ placeHolder: String.raw`\*` });
 export interface CommandModule {
     data: SlashCommandBuilder;
     execute: (interaction: Interaction) => Promise<void>;
@@ -30,21 +28,9 @@ export interface ModalModule {
     modal: ModalBuilder;
     execute: (interaction: Interaction) => Promise<void>;
 }
-export class OpenAISingleton {
-    private static _instance: OpenAISingleton;
-    config: OpenAIApi;
-    private constructor() {
-        this.config = new OpenAIApi(new Configuration({
-            organization: process.env.OPENAI_ORGANIZATION,
-            apiKey: process.env.OPENAI_API_KEY
-        }));
-    }
-    public static get getInstance() {
-        return this._instance || (this._instance = new this());
-    }
-}
+export const ServerConfigs: Collection<string, OpenAI> = new Collection();
 export interface Conversation {
-    conversation: ChatCompletionRequestMessage[];
+    conversation: OpenAI.ChatCompletionMessageParam[];
     root: string;
     messageId: string;
     userId: string;
@@ -58,6 +44,7 @@ class UserData {
         this.text = text;
     }
 }
+
 export class UserTracker {
     private static _instance: UserTracker;
     private _userCounts: Map<string, UserData>;

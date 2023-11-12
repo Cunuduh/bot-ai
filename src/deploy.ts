@@ -32,7 +32,11 @@ const commandFiles: string[] = fs.readdirSync('src/commands').filter(file => fil
 
 commandFiles.forEach((file: string) => {
 	const command: CommandModule = require(`./commands/${file}`);
-	commands.push(command.data.toJSON());
+	try {
+		commands.push(command.data.toJSON());
+	} catch (error) {
+		console.error(error);
+	}
 });
 
 const rest = new REST({ version: '10' }).setToken(token);

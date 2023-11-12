@@ -16,11 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, Message, ModalActionRowComponentBuilder, ModalBuilder, ModalSubmitInteraction, TextInputBuilder, TextInputStyle } from "discord.js";
-import { ChatCompletionRequestMessage } from 'openai';
-import { Conversation, ModalModule, Filter, OpenAISingleton, UserTracker } from '../types';
+import { APIError, OpenAI } from 'openai';
+import { Conversation, ModalModule, ServerConfigs, UserTracker } from '../types';
 
 const tracker = UserTracker.getInstance;
-const openai = OpenAISingleton.getInstance;
 
 module.exports = <ModalModule> {
     modal: new ModalBuilder()
@@ -33,16 +32,27 @@ module.exports = <ModalModule> {
                         .setLabel('User message')
                         .setCustomId('useThisContextUserInput')
                         .setPlaceholder('User message...')
-                        .setMinLength(1)
-                        .setMaxLength(1024)
                         .setStyle(TextInputStyle.Paragraph)
-                        .setRequired(true)
+                        .setRequired(true),
+                ),
+            new ActionRowBuilder<ModalActionRowComponentBuilder>()
+                .addComponents(
+                    new TextInputBuilder()
+                        .setLabel('Image URL')
+                        .setCustomId('useThisContextImageInput')
+                        .setPlaceholder('Image URL, one for each line...')
+                        .setMinLength(1)
+                        .setStyle(TextInputStyle.Paragraph)
+                        .setRequired(false)
                 )
         ),
         async execute(interaction: ModalSubmitInteraction) {
             if (!interaction.message) return;
+            if (!interaction.guildId) return;
+            const openai: OpenAI = ServerConfigs.get(interaction.guildId) ?? ServerConfigs.set(interaction.guildId, new OpenAI()).get(interaction.guildId)!;
             const previous = interaction.message.id;
             const root = tracker.findRoot(previous);
+            const prevModel = interaction.message.embeds[0].footer?.text ?? "";
             if (!root) {
                 interaction.message.edit({ embeds: [interaction.message.embeds[0]], components: [new ActionRowBuilder<ButtonBuilder>()
                     .addComponents(
@@ -60,48 +70,58 @@ module.exports = <ModalModule> {
             }
             const previousMessages = tracker.getCommandConversation(root);
             if (!previousMessages) return;
-            let now = tracker.getUserTime(interaction.user.id).text;
             let actionRow: ActionRowBuilder<ButtonBuilder>;
             let responseEmbed: EmbedBuilder;
-            const messages: ChatCompletionRequestMessage[] = [
+            let messages: OpenAI.ChatCompletionMessageParam[] = [
                 ...previousMessages.conversation,
                 { role: 'user', content: interaction.fields.getTextInputValue('useThisContextUserInput') }
             ];
+            if (interaction.fields.getTextInputValue('useThisContextImageInput')) {
+                const imageUrls = interaction.fields.getTextInputValue('useThisContextImageInput')!.split('\n').map(url => {
+                    return { "type": "image_url", "image_url": { "url": url, "detail": "auto" } };
+                }) satisfies OpenAI.ChatCompletionContentPartImage[];
+                messages = [
+                    ...previousMessages.conversation,
+                    { role: 'user', content: [
+                        { "type": "text", "text": interaction.fields.getTextInputValue('useThisContextUserInput') },
+                        ...imageUrls
+                    ]
+                    },
+                ];
+            }
             if (!interaction.guildId) {
                 responseEmbed = new EmbedBuilder()
                     .setTitle('This command can only be used in a server!');
                 await interaction.reply({ embeds: [responseEmbed], ephemeral: true });
                 return;
             }
-            if (tracker.getUserCount(interaction.user.id).text === 20) {
-                responseEmbed = new EmbedBuilder()
-                    .setTitle('You have reached the maximum number of requests (20) for this hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
-                await interaction.reply({ embeds: [responseEmbed], ephemeral: true });
-                return;
-            }
             await interaction.deferReply({ fetchReply: true });
             interaction.message.edit({ embeds: [interaction.message.embeds[0]], components: [new ActionRowBuilder<ButtonBuilder>()
                 .addComponents(
-                    interaction.message.components[0].components[0] as unknown as ButtonBuilder,
                     new ButtonBuilder()
-                        .setCustomId('useThisContext')
+                        .setCustomId('alreadyReplied')
                         .setLabel('Already replied')
                         .setStyle(ButtonStyle.Secondary)
                         .setDisabled(true)
                 ) ] });
-            const response = await openai.config.createChatCompletion({
-                model: 'gpt-3.5-turbo-0613',
+            const response = await openai.chat.completions.create({
+                model: prevModel,
                 messages,
-                max_tokens: 1024
+                max_tokens: Infinity
             }).catch(async error => {
                 console.error(error);
-                responseEmbed = new EmbedBuilder()
-                    .setTitle('An error occurred while generating the response! Error code: ' + error.response.status);
+                if (error instanceof APIError) {
+                    responseEmbed = new EmbedBuilder()
+                        .setTitle(`An error occurred while generating the response! ${error.message}`);
+                } else {
+                    responseEmbed = new EmbedBuilder()
+                        .setTitle(`An error occurred while generating the response!`);
+                }
                 await interaction.editReply({ embeds: [responseEmbed] });
                 return;
             });
             if (!response) return;
-            if (!response.data.choices[0].message) {
+            if (!response.choices[0].message) {
                 responseEmbed = new EmbedBuilder()
                     .setTitle('An error occurred while generating the response!');
                 await interaction.editReply({ embeds: [responseEmbed] });
@@ -110,31 +130,20 @@ module.exports = <ModalModule> {
             tracker.incrementUser(interaction.user.id, 'text');
             responseEmbed = new EmbedBuilder()
                 .setTitle(interaction.fields.getTextInputValue('useThisContextUserInput').slice(0, 255))
-                .setDescription(response.data.choices[0].message.content || null) // Pass the content string to Filter.clean() to remove any profanity
+                .setDescription(response.choices[0].message.content || null) 
                 .setColor('Blurple')
                 .setTimestamp()
-                .setFooter({ text: `Reply powered by gpt-3.5-turbo-0613.` });
+                .setFooter({ text: prevModel })
             actionRow = new ActionRowBuilder<ButtonBuilder>()
                 .addComponents(
-                    new ButtonBuilder()
-                        .setCustomId('requestsRemaining')
-                        .setLabel(`${20 - tracker.getUserCount(interaction.user.id).text}/20 requests remaining`)
-                        .setStyle(ButtonStyle.Secondary)
-                        .setDisabled(true),
                     new ButtonBuilder()
                         .setCustomId('useThisContext')
                         .setLabel('Reply')
                         .setStyle(ButtonStyle.Primary)
                 );
-            const text = response.data.choices[0].message.content || "";
-            const content = Filter.isProfane(text) ? '**Flagged words:** ||' + text.split(/\s/).filter(Boolean).filter(word => Filter.clean(word) !== word).join(', ') + '||'
-                : undefined;
-            let res: Message;
-            if (content)
-                res = await interaction.editReply({ embeds: [responseEmbed], components: [actionRow], content });
-            else
-                res = await interaction.editReply({ embeds: [responseEmbed], components: [actionRow] });
-            const messagesToSend: ChatCompletionRequestMessage[] = [
+            const text = response.choices[0].message.content || "";
+            let res: Message = await interaction.editReply({ embeds: [responseEmbed], components: [actionRow] });
+            const messagesToSend: OpenAI.ChatCompletionMessageParam[] = [
                 ...messages,
                 { role: 'assistant', content: text }
             ];
@@ -146,15 +155,5 @@ module.exports = <ModalModule> {
                 guildId: interaction.guildId
             };
             tracker.updateCommandConversation(conversation.root, conversation);
-            if (tracker.getUserCount(interaction.user.id).text === 20) {
-                tracker.setUserTime(interaction.user.id, Date.now(), 'text');
-                now = tracker.getUserTime(interaction.user.id).text;
-                responseEmbed = new EmbedBuilder()
-                    .setTitle('You have reached the maximum number of requests (20) for this hour! Please try again at: <t:' + (Math.round(now / 1000) + 3600) + ':t>');
-                await interaction.followUp({ embeds: [responseEmbed], ephemeral: true });
-                setTimeout(() => {
-                    tracker.resetUserCount(interaction.user.id);
-                }, 3600000);
-            }
         }
 }
