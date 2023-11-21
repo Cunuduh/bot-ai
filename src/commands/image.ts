@@ -42,8 +42,8 @@ module.exports = <CommandModule> {
                 .setDescription('The size of the image.')
                 .setRequired(true)
                 .addChoices(
-                    { name: '256x256', value: '256x256'},
-                    { name: '512x512', value: '512x512'},
+                    { name: '256x256 (DALL-E 2 only)', value: '256x256'},
+                    { name: '512x512 (DALL-E 2 only)', value: '512x512'},
                     { name: '1024x1024', value: '1024x1024'},
                     { name: '1792x1024', value: '1792x1024'},
                     { name: '1024x1792', value: '1024x1792'}
